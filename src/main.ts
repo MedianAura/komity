@@ -37,6 +37,7 @@ program.command('staging').action(async () => {
 
 export async function run(): Promise<number> {
   Logger.clear();
+  Logger.title('Commit message generator');
 
   try {
     await program.parseAsync();

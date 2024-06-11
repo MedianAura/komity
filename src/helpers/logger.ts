@@ -40,7 +40,7 @@ function success(message: string): void {
 }
 
 function title(message: string): void {
-  println(chalk.bold.magentaBright('[CONCATENATE] ') + message);
+  println(chalk.bold.magentaBright('[KOMITY] ') + message);
 }
 
 export const Logger = {

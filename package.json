@@ -15,7 +15,7 @@
     "./dist"
   ],
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "check": "concatenate check",
     "check:knip": "knip",
     "check:stryker": "stryker run",
