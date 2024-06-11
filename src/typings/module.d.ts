@@ -1,1 +1,1 @@
-declare module "longest";
+declare module 'longest';

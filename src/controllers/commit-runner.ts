@@ -1,4 +1,4 @@
-import inquirer from 'inquirer';
+import inquirer, { type Answers } from 'inquirer';
 import { sprintf } from 'sprintf-js';
 import { InjectDependency } from '@medianaura/di-manager';
 import { DescriptionQuestion, LogQuestion, SubjectQuestion, TaskQuestion, TypeQuestion } from '../models/questions/index.js';
@@ -64,7 +64,7 @@ export class CommitRunner {
     return commitMessage;
   }
 
-  private buildHead(answers: any): string {
+  private buildHead(answers: Answers): string {
     let taskMessage = '';
     if (answers.isTaskAffected) {
       taskMessage = `(${answers.task.toUpperCase() as string})`;

@@ -1,10 +1,10 @@
 import dedent from 'dedent';
 // import { type GitlogOptions } from 'gitlog';
 // import gitlog from 'gitlog';
-import { exec, spawnSync, spawn } from 'node:child_process';
+import { exec, spawn, spawnSync } from 'node:child_process';
 import { registry } from 'tsyringe';
 import { Logger } from '../helpers/logger.js';
-import { getDebugger } from "../helpers/pino.js";
+import { getDebugger } from '../helpers/pino.js';
 
 export const GitServiceToken = Symbol('GitService');
 

@@ -7,7 +7,7 @@ const branch = cleanBranch(git.getBranch() ?? '');
 
 const TaskNumberQuestion: InputQuestion = {
   type: 'input',
-  message: 'Tâche Jira :',
+  message: 'Issue Id :',
   name: 'task',
   default: branch,
   when(answers) {
@@ -18,7 +18,7 @@ const TaskNumberQuestion: InputQuestion = {
 const hasTaskQuestion: ConfirmQuestion = {
   type: 'confirm',
   name: 'isTaskAffected',
-  message: 'Est-ce que le commit est lié à une tâche ?',
+  message: 'Is the commit solving a issue ?',
   default: true,
 };
 

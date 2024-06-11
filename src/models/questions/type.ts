@@ -4,47 +4,47 @@ import longest from 'longest';
 export const types = [
   // ## Nouveau Feature
   {
-    description: "Nouvelle fonctionnalité pour bonifié l'offre utilisateur..",
-    name: 'Nouvelle Fonctionnalité',
+    description: 'New feature for the user',
+    name: 'Feature',
     value: 'feature',
   },
   // ## Correction
   {
-    description: 'Correction sur le code',
+    description: 'Correction of an issue.',
     name: 'Correction',
     value: 'fix',
   },
   {
-    description: "Changement qui affecte l'aspect visuel de l'application",
+    description: 'Change that change the user interface or the user experience.',
     name: 'Style',
     value: 'style',
   },
   // ## Refactor
   {
-    description: 'Modification de code : Complexité, Cognitivité, Performance ou Visuel',
+    description: 'Code Refactoring.',
     name: 'Refactor',
     value: 'refactor',
   },
   {
-    description: "Changement qui n'affecte pas le code : Prettier, Configuration, Pipeline",
+    description: "Chore that doesn't modify the code.",
     name: 'Maintenance',
     value: 'maintenance',
   },
   // ## Documentation
   {
-    description: 'Ajout de documentation : Cookbook, Readme, Commentaire',
+    description: 'Documentation only changes.',
     name: 'Documentation',
     value: 'doc',
   },
   // ## Test
   {
-    description: 'Ajout ou Correction de test unitaire ou e2e',
+    description: 'Adding unit tests or correcting existing tests.',
     name: 'Test',
     value: 'test',
   },
   // ## Dependence
   {
-    description: 'Mise à jour des dépendences',
+    description: 'Dependencies update.',
     name: 'Dependencies',
     value: 'dep',
   },
@@ -61,7 +61,7 @@ const choices = types.map((type) => {
 
 const TypeQuestion: ListQuestion = {
   type: 'list',
-  message: 'Choisir le type de changement pour le commit :',
+  message: 'Commit Type :',
   choices,
   name: 'type',
 };
