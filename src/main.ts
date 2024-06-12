@@ -2,6 +2,7 @@ import { readPackageSync } from 'read-pkg';
 import { program } from '@commander-js/extra-typings';
 import { BranchRunner } from './controllers/branch-runner.js';
 import { CommitRunner } from './controllers/commit-runner.js';
+import { GenerateRunner } from './controllers/generate-runner.js';
 import { handleError } from './helpers/handle-error.js';
 import { Logger } from './helpers/logger.js';
 
@@ -16,9 +17,13 @@ program.command('commit', { isDefault: true }).action(async () => {
   await new CommitRunner().run();
 });
 
-program.command('generate').action(async () => {
-  await new CommitRunner().run();
-});
+program
+  .command('generate')
+  .argument('<next>', 'Specify the next version')
+  .option('--preview', 'Preview changelog')
+  .action(async (next, options) => {
+    await new GenerateRunner().run(next, options);
+  });
 
 program.command('validate').action(async () => {
   await new CommitRunner().run();

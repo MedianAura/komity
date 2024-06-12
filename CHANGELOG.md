@@ -1,0 +1,3 @@
+## Komity (Changelog)
+
+[//]: # 'TEMPLATE'

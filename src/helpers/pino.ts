@@ -7,6 +7,7 @@ const stream = build({
 const debug = pino(stream);
 
 export function getDebugger(): Logger {
+  debug.level = 'debug';
   if (!process.env.PINO_DEBUG || process.env.PINO_DEBUG === '0') {
     debug.level = 'silent';
   }

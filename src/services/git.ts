@@ -1,7 +1,7 @@
 import dedent from 'dedent';
-// import { type GitlogOptions } from 'gitlog';
-// import gitlog from 'gitlog';
-import { exec, spawn, spawnSync } from 'node:child_process';
+import { execaSync } from 'execa';
+import { gitlog, type IOptions, type IParseCommit } from 'gitlog2';
+import { exec, spawn } from 'node:child_process';
 import { registry } from 'tsyringe';
 import { Logger } from '../helpers/logger.js';
 import { getDebugger } from '../helpers/pino.js';
@@ -39,9 +39,9 @@ export class GitService {
     const parameters = ['status'];
     getDebugger().info(`${command} ${parameters}`);
 
-    const commitIO = spawnSync(command, parameters);
+    const commitIO = execaSync(command, parameters);
 
-    const branch = /On branch (.)?/.exec(commitIO.stdout.toString());
+    const branch = /On branch (.)?/.exec(commitIO.message);
 
     if (!branch) return undefined;
 
@@ -49,7 +49,6 @@ export class GitService {
   }
 
   public async commit(commitMessage: string): Promise<boolean | string> {
-    // Definition de l'action
     const command = 'git';
     const parameters = ['commit', '-m', dedent(commitMessage)];
 
@@ -76,5 +75,46 @@ export class GitService {
         resolve(true);
       });
     });
+  }
+
+  public getLatestTag(): string | undefined {
+    const command = 'git';
+
+    let parameters = ['fetch', '--all', '--tags'];
+    getDebugger().info(`${command} ${parameters}`);
+    execaSync(command, parameters);
+
+    parameters = ['rev-list', '--exclude=alpha-*', '--tags', '--max-count=1'];
+    getDebugger().info(`${command} ${parameters}`);
+    const commitIO = execaSync(command, parameters);
+    if (commitIO.exitCode !== 0) {
+      throw new Error(commitIO.message);
+    }
+
+    const commit = commitIO.stdout.toString().replace('\n', '');
+
+    parameters = ['describe', '--tags', commit];
+    getDebugger().info(`${command} ${parameters}`);
+    const tag = execaSync(command, parameters);
+    if (tag.exitCode !== 0) {
+      throw new Error(tag.message);
+    }
+
+    return tag.stdout.toString() ? tag.stdout.toString().toLowerCase().replace(/\n/, '') : undefined;
+  }
+
+  public async log(tag: string): Promise<IParseCommit[]> {
+    const options: IOptions = {
+      repo: process.cwd(),
+      fields: ['hash', 'subject', 'body', 'rawBody', 'authorName', 'authorDate'],
+      number: 10_000,
+    };
+
+    tag = 'f078d408be630dcdbe5d20628b61d2e47fd59b0d';
+    if (tag) {
+      options.branch = `${tag}..HEAD`;
+    }
+
+    return gitlog(options);
   }
 }
