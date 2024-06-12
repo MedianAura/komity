@@ -2,7 +2,6 @@ import fsExtra from 'fs-extra';
 import fs from 'node:fs';
 import path from 'node:path';
 import { InjectDependency } from '@medianaura/di-manager';
-import { Logger } from '../helpers/logger.js';
 import { CommitModel } from '../models/commit.js';
 import { ChangelogGeneratorService, ChangelogGeneratorServiceToken } from '../services/generate.js';
 import { GitService, GitServiceToken } from '../services/git.js';
@@ -57,8 +56,6 @@ export class GenerateRunner {
 
     content = content.replace('[//]: # "TEMPLATE"', `[//]: # "TEMPLATE"\r\n\r\n${log}`);
     writeFileSync(changelogPath, content, { encoding: 'utf8' });
-
-    Logger.success('Writing Changelog completed.');
   }
 
   private async getCurrentTag(): Promise<string> {
