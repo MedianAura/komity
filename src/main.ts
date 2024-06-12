@@ -4,6 +4,7 @@ import { BranchRunner } from './controllers/branch-runner.js';
 import { CommitRunner } from './controllers/commit-runner.js';
 import { GenerateRunner } from './controllers/generate-runner.js';
 import { SetupRunner } from './controllers/setup-runner.js';
+import { ValidateRunner } from './controllers/validate-runner.js';
 import { handleError } from './helpers/handle-error.js';
 import { Logger } from './helpers/logger.js';
 
@@ -26,9 +27,12 @@ program
     await new GenerateRunner().run(next, options);
   });
 
-program.command('validate').action(async () => {
-  await new CommitRunner().run();
-});
+program
+  .command('validate')
+  .argument('<commitFile>', 'commit file')
+  .action(async (commitFile) => {
+    await new ValidateRunner().run(commitFile);
+  });
 
 program
   .command('branch')

@@ -1,21 +1,23 @@
-import fsExtra from 'fs-extra';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { sprintf } from 'sprintf-js';
 import { Logger } from '../helpers/logger.js';
-import { changelogTemplate } from '../templates/changelog.js';
+import { types } from '../models/questions/type.js';
 
-const { writeFileSync, existsSync } = fsExtra;
+export class ValidateRunner {
+  public async run(commitFile: string): Promise<void> {
+    const commitMessage = readFileSync(path.resolve(process.cwd(), commitFile), { encoding: 'utf8' });
 
-export class SetupRunner {
-  public async run(title: string): Promise<void> {
-    const changelogPath = path.resolve(process.cwd(), 'CHANGELOG.md');
-
-    if (existsSync(changelogPath)) {
-      throw new Error(`Changelog file already exists at <${changelogPath}>`);
+    if (commitMessage.startsWith('Merge branch') || commitMessage.startsWith('Merge remote-tracking branch')) {
+      return;
     }
 
-    writeFileSync(changelogPath, sprintf(changelogTemplate, { title }), { encoding: 'utf8' });
+    const validTypes = types.map((type) => type.value).join('|');
+    const regex = new RegExp(`^(${validTypes})(\\(.*\\))?:\\s.*$`, 'gm');
 
-    Logger.success('Changelog file created');
+    if (regex.exec(commitMessage) === null) {
+      throw new Error('Commit is invalid.');
+    }
+
+    Logger.success('Commit is valid.');
   }
 }
