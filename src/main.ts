@@ -3,6 +3,7 @@ import { program } from '@commander-js/extra-typings';
 import { BranchRunner } from './controllers/branch-runner.js';
 import { CommitRunner } from './controllers/commit-runner.js';
 import { GenerateRunner } from './controllers/generate-runner.js';
+import { SetupRunner } from './controllers/setup-runner.js';
 import { handleError } from './helpers/handle-error.js';
 import { Logger } from './helpers/logger.js';
 
@@ -40,6 +41,13 @@ program.command('staging').action(async () => {
   await new CommitRunner().run();
 });
 
+program
+  .command('setup')
+  .argument('<title>', 'Specify the title for the changelog')
+  .action(async (title) => {
+    await new SetupRunner().run(title);
+  });
+
 export async function run(): Promise<number> {
   Logger.clear();
   Logger.title('Commit message generator');
@@ -47,8 +55,6 @@ export async function run(): Promise<number> {
   try {
     await program.parseAsync();
   } catch (error: unknown) {
-    Logger.skipLine();
-
     return handleError(error);
   }
 
