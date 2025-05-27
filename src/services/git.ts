@@ -110,7 +110,6 @@ export class GitService {
       number: 10_000,
     };
 
-    tag = 'f078d408be630dcdbe5d20628b61d2e47fd59b0d';
     if (tag) {
       options.branch = `${tag}..HEAD`;
     }

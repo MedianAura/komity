@@ -41,9 +41,10 @@ program
     await new BranchRunner().run(branch);
   });
 
-program.command('staging').action(async () => {
-  await new CommitRunner().run();
-});
+// TODO : Implement staging command
+// program.command('staging').action(async () => {
+//   await new CommitRunner().run();
+// });
 
 program
   .command('setup')
