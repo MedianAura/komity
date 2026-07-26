@@ -1,0 +1,5 @@
+# `core.autocrlf=true` faisait sortir les fichiers en CRLF au checkout, ce que la
+# règle `n/hashbang` d'ESLint refuse sur `bin/run.js` : un clone frais échouait au
+# lint tant que Prettier n'était pas repassé. `eol=lf` fixe la fin de ligne du
+# répertoire de travail quelle que soit la configuration git de la machine.
+* text=auto eol=lf
