@@ -2,14 +2,16 @@ import { type ConfirmQuestion, type InputQuestion } from 'inquirer';
 import { getFromContainer } from '@medianaura/di-manager';
 import { GitService, GitServiceToken } from '../../services/git.js';
 
-const git = getFromContainer<GitService>(GitServiceToken);
-const branch = cleanBranch(git.getBranch() ?? '');
-
 const TaskNumberQuestion: InputQuestion = {
   type: 'input',
   message: 'Issue Id :',
   name: 'task',
-  default: branch,
+  // Résolu au moment du prompt : au chargement du module, on ne sait pas encore
+  // si la commande a besoin de git, ni même si on est dans un dépôt.
+  default() {
+    const git = getFromContainer<GitService>(GitServiceToken);
+    return cleanBranch(git.getBranch() ?? '');
+  },
   when(answers) {
     return answers.isTaskAffected;
   },
