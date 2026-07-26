@@ -15,6 +15,7 @@
     "strict": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "emitDecoratorMetadata": true,
     "useUnknownInCatchVariables": true,
     "noUncheckedIndexedAccess": true,
