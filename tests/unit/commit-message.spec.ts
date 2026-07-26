@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { extractHeader, isValidCommitMessage } from '../../src/helpers/commit-message.js';
+import { extractHeader, isValidCommitMessage, validateCommitMessage } from '../../src/helpers/commit-message.js';
 
 describe('extractHeader', () => {
   it('saute les lignes vides et les commentaires du gabarit', () => {
@@ -60,5 +60,26 @@ describe('isValidCommitMessage', () => {
     ['squash! fix: quelque chose', 'squash'],
   ])('laisse passer %s (%s)', (header) => {
     expect(isValidCommitMessage(`${header}\n\ncorps\n`)).toBe(true);
+  });
+});
+
+describe('validateCommitMessage', () => {
+  it.each([
+    ['', 'header-missing'],
+    ['nope: quelque chose', 'type-unknown'],
+    ['pas du tout un en-tête', 'format-invalid'],
+    ['fix:sans espace', 'format-invalid'],
+  ])('classe <%s> en %s', (message, rule) => {
+    const result = validateCommitMessage(message);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((error) => error.rule)).toEqual([rule]);
+  });
+
+  it("expose l'en-tête isolé et les types acceptés", () => {
+    const result = validateCommitMessage('# gabarit\n\nnope: quelque chose\n');
+
+    expect(result.header).toBe('nope: quelque chose');
+    expect(result.allowedTypes).toContain('fix');
   });
 });

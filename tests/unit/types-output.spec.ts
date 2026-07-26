@@ -1,4 +1,5 @@
-import { buildTypesPayload, renderTypesText, TYPES_SCHEMA_VERSION } from '../../src/helpers/types-output.js';
+import { SCHEMA_VERSION } from '../../src/helpers/schema.js';
+import { buildTypesPayload, renderTypesText } from '../../src/helpers/types-output.js';
 import { type CommitType } from '../../src/models/commit-types.js';
 
 const sample: CommitType[] = [
@@ -19,7 +20,7 @@ describe('renderTypesText', () => {
 describe('buildTypesPayload', () => {
   it('porte la version du contrat et les trois champs publics', () => {
     expect(buildTypesPayload(sample)).toEqual({
-      schema: TYPES_SCHEMA_VERSION,
+      schema: SCHEMA_VERSION,
       types: [
         { value: 'fix', name: 'Correction', description: 'Correction of an issue.' },
         { value: 'maintenance', name: 'Maintenance', description: "Chore that doesn't modify the code." },

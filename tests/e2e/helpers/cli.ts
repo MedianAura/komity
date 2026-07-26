@@ -17,10 +17,13 @@ export interface CLIResult {
   stdout: string;
 }
 
-export async function runCLI(arguments_: string[], options: { cwd?: string } = {}): Promise<CLIResult> {
+export async function runCLI(arguments_: string[], options: { cwd?: string; input?: string } = {}): Promise<CLIResult> {
   const result = await execa(process.execPath, [bin, ...arguments_], {
     cwd: options.cwd ?? root,
     reject: false,
+    // Toujours fourni : stdin reste un pipe, donc `isTTY` est faux dans le
+    // sous-processus — ce que testent les cas non interactifs.
+    input: options.input ?? '',
     env: {
       // update-notifier interroge le registre npm et écrit dans un cache global.
       NO_UPDATE_NOTIFIER: '1',

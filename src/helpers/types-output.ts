@@ -1,8 +1,6 @@
 import longest from 'longest';
 import { type CommitType } from '../models/commit-types.js';
-
-/** Version du contrat consommé par les agents. À incrémenter si la forme change. */
-export const TYPES_SCHEMA_VERSION = 1;
+import { SCHEMA_VERSION } from './schema.js';
 
 export interface TypesPayload {
   schema: number;
@@ -17,7 +15,7 @@ export function renderTypesText(types: CommitType[]): string {
 
 export function buildTypesPayload(types: CommitType[]): TypesPayload {
   return {
-    schema: TYPES_SCHEMA_VERSION,
+    schema: SCHEMA_VERSION,
     types: types.map((type) => ({ value: type.value, name: type.name, description: type.description })),
   };
 }

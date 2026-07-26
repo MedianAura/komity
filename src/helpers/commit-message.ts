@@ -36,7 +36,53 @@ function isValidHeader(header: string): boolean {
 }
 
 export function isValidCommitMessage(message: string): boolean {
-  const header = extractHeader(message);
-
-  return isGeneratedCommit(header) || isValidHeader(header);
+  return validateCommitMessage(message).valid;
 }
+
+interface ValidationError {
+  message: string;
+  rule: string;
+}
+
+export interface ValidationResult {
+  allowedTypes: string[];
+  errors: ValidationError[];
+  header: string;
+  valid: boolean;
+}
+
+const EXAMPLE_HEADER = 'fix(AB-12): correct the login redirect';
+
+/**
+ * Diagnostic plutôt que booléen : l'agent qui a écrit le message doit savoir
+ * quoi corriger, pas seulement qu'il a échoué.
+ */
+export function validateCommitMessage(message: string): ValidationResult {
+  const header = extractHeader(message);
+  const allowedTypes = types.map((type) => type.value);
+  const result = { allowedTypes, header, valid: true, errors: [] as ValidationError[] };
+
+  if (isGeneratedCommit(header)) {
+    return result;
+  }
+
+  if (header === '') {
+    return { ...result, valid: false, errors: [{ rule: 'header-missing', message: 'The message has no header line.' }] };
+  }
+
+  if (isValidHeader(header)) {
+    return result;
+  }
+
+  // Un `mot:` en tête distingue « type inconnu » de « forme cassée » — les deux
+  // corrections ne sont pas les mêmes.
+  const declaredType = /^([a-z]+)(?:\(.*\))?:/i.exec(header)?.[1];
+  const errors: ValidationError[] =
+    declaredType !== undefined && !allowedTypes.includes(declaredType)
+      ? [{ rule: 'type-unknown', message: `Unknown commit type <${declaredType}>.` }]
+      : [{ rule: 'format-invalid', message: `Header must read <type(scope): subject>, for example <${EXAMPLE_HEADER}>.` }];
+
+  return { ...result, valid: false, errors };
+}
+
+export { EXAMPLE_HEADER };

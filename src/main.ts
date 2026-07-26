@@ -27,30 +27,36 @@ const cli = program
   // `komity --json types`, l'option précédant la sous-commande.
   .option('--json', 'Machine-readable output');
 
-program.command('commit', { isDefault: true }).action(async () => {
-  await new CommitRunner().run();
-});
+program
+  .command('commit', { isDefault: true })
+  // `--input` porte la charge utile, `--json` ne choisit que la forme de la
+  // sortie : les deux axes restent orthogonaux.
+  .option('--input <payload>', 'JSON payload, or - to read it from stdin')
+  .option('--commit', 'Actually create the commit; without it the message is only emitted')
+  .action(async (options) => {
+    await new CommitRunner().run({ ...options, json: cli.opts().json });
+  });
 
 program
   .command('generate')
   .argument('<next>', 'Specify the next version')
   .option('--preview', 'Preview changelog')
   .action(async (next, options) => {
-    await new GenerateRunner().run(next, options);
+    await new GenerateRunner().run(next, { ...options, json: cli.opts().json });
   });
 
 program
   .command('validate')
   .argument('<commitFile>', 'commit file')
   .action(async (commitFile) => {
-    await new ValidateRunner().run(commitFile);
+    await new ValidateRunner().run(commitFile, { json: cli.opts().json });
   });
 
 program
   .command('branch')
   .argument('<branch>', 'branch to create')
   .action(async (branch) => {
-    await new BranchRunner().run(branch);
+    await new BranchRunner().run(branch, { json: cli.opts().json });
   });
 
 program
@@ -64,14 +70,16 @@ program
   .command('setup')
   .argument('<title>', 'Specify the title for the changelog')
   .action(async (title) => {
-    await new SetupRunner().run(title);
+    await new SetupRunner().run(title, { json: cli.opts().json });
   });
 
 export async function run(): Promise<number> {
   try {
-    await program.parseAsync();
+    await cli.parseAsync();
   } catch (error: unknown) {
-    return handleError(error);
+    // `opts()` est déjà peuplé : commander analyse les options du programme
+    // avant de déclencher l'action qui a levé.
+    return handleError(error, Boolean(cli.opts().json));
   }
 
   return 0;

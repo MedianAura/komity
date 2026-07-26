@@ -1,13 +1,13 @@
 import fsExtra from 'fs-extra';
 import path from 'node:path';
 import { sprintf } from 'sprintf-js';
-import { Logger } from '../helpers/logger.js';
+import { reportSuccess } from '../helpers/output.js';
 import { changelogTemplate } from '../templates/changelog.js';
 
 const { writeFileSync, existsSync } = fsExtra;
 
 export class SetupRunner {
-  public async run(title: string): Promise<void> {
+  public async run(title: string, options: { json?: boolean } = {}): Promise<void> {
     const changelogPath = path.resolve(process.cwd(), 'CHANGELOG.md');
 
     if (existsSync(changelogPath)) {
@@ -16,6 +16,6 @@ export class SetupRunner {
 
     writeFileSync(changelogPath, sprintf(changelogTemplate, { title }), { encoding: 'utf8' });
 
-    Logger.success('Changelog file created');
+    reportSuccess(options.json, 'Changelog file created', { path: changelogPath });
   }
 }

@@ -2,7 +2,7 @@ import fsExtra from 'fs-extra';
 import fs from 'node:fs';
 import path from 'node:path';
 import { InjectDependency } from '@medianaura/di-manager';
-import { Logger } from '../helpers/logger.js';
+import { reportSuccess } from '../helpers/output.js';
 import { CommitModel } from '../models/commit.js';
 import { ChangelogGeneratorService, ChangelogGeneratorServiceToken } from '../services/generate.js';
 import { GitService, GitServiceToken } from '../services/git.js';
@@ -16,7 +16,7 @@ export class GenerateRunner {
   @InjectDependency(ChangelogGeneratorServiceToken)
   private readonly generator!: ChangelogGeneratorService;
 
-  public async run(next: string, options: { preview?: boolean }): Promise<void> {
+  public async run(next: string, options: { json?: boolean; preview?: boolean }): Promise<void> {
     const changelogPath = path.resolve(process.cwd(), 'CHANGELOG.md');
 
     if (!fs.existsSync(changelogPath)) {
@@ -51,6 +51,11 @@ export class GenerateRunner {
     const log = this.generator.generate(list, next);
 
     if (options.preview) {
+      if (options.json) {
+        reportSuccess(true, '', { changelog: log, written: false });
+        return;
+      }
+
       console.log(log);
       return;
     }
@@ -60,7 +65,7 @@ export class GenerateRunner {
     content = content.replace('[//]: # "TEMPLATE"', () => `[//]: # "TEMPLATE"\r\n\r\n${log}`);
     writeFileSync(changelogPath, content, { encoding: 'utf8' });
 
-    Logger.success('Writing Changelog completed.');
+    reportSuccess(options.json, 'Writing Changelog completed.', { path: changelogPath, written: true });
   }
 
   private async getCurrentTag(): Promise<string> {

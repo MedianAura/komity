@@ -64,6 +64,57 @@ describe.concurrent('komity', () => {
     });
   });
 
+  describe('commit --input', () => {
+    it("assemble le message et ne l'écrit pas dans le dépôt", async () => {
+      const payload = JSON.stringify({ type: 'fix', scope: 'ab-12', subject: 'corrige la redirection' });
+      const { exitCode, stdout } = await runCLI(['commit', '--input', payload]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('fix(AB-12): corrige la redirection');
+    });
+
+    it('lit la charge utile sur stdin avec -', async () => {
+      const payload = JSON.stringify({ type: 'feature', subject: 'ajoute une chose' });
+      const { exitCode, stdout } = await runCLI(['commit', '--input', '-'], { input: payload });
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('feature: ajoute une chose');
+    });
+
+    // Aller-retour : ce que komity assemble doit passer komity validate.
+    it('produit un message que validate accepte', async () => {
+      const payload = JSON.stringify({ type: 'fix', scope: 'ab-12', subject: 'corrige', body: 'détail', log: true });
+      const composed = await runCLI(['--json', 'commit', '--input', payload]);
+      const { message } = JSON.parse(composed.stdout) as { message: string };
+
+      const { exitCode } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', message);
+        return runCLI(['validate', file]);
+      });
+
+      expect(exitCode).toBe(0);
+    });
+
+    it('rejette un type inconnu en annonçant les types valides', async () => {
+      const payload = JSON.stringify({ type: 'nope', subject: 'x' });
+      const { exitCode, stdout } = await runCLI(['--json', 'commit', '--input', payload]);
+
+      expect(exitCode).not.toBe(0);
+
+      const { error } = JSON.parse(stdout) as { error: { allowedTypes: string[]; code: string } };
+      expect(error.code).toBe('type-unknown');
+      expect(error.allowedTypes).toContain('fix');
+    });
+
+    // Le garde-fou : sans lui, inquirer bloquerait jusqu'au timeout du job.
+    it('refuse de demander quoi que ce soit hors TTY', async () => {
+      const { exitCode, stdout } = await runCLI(['--json', 'commit']);
+
+      expect(exitCode).not.toBe(0);
+      expect((JSON.parse(stdout) as { error: { code: string } }).error.code).toBe('input-required');
+    });
+  });
+
   describe('validate', () => {
     it('accepte un en-tête valide', async () => {
       const { exitCode } = await withTemporaryDirectory(async (directory) => {
@@ -101,6 +152,37 @@ describe.concurrent('komity', () => {
       });
 
       expect(exitCode).toBe(0);
+    });
+
+    it('rend un diagnostic actionnable sous --json', async () => {
+      const { exitCode, stdout } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', '# gabarit\n\nfixed the login bug\n');
+        return runCLI(['--json', 'validate', file]);
+      });
+
+      expect(exitCode).not.toBe(0);
+
+      const payload = JSON.parse(stdout) as {
+        allowedTypes: string[];
+        errors: { rule: string }[];
+        header: string;
+        valid: boolean;
+      };
+
+      expect(payload.valid).toBe(false);
+      expect(payload.header).toBe('fixed the login bug');
+      expect(payload.errors.map((error) => error.rule)).toEqual(['format-invalid']);
+      expect(payload.allowedTypes).toContain('fix');
+    });
+
+    it('sort un succès analysable sous --json', async () => {
+      const { exitCode, stdout } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'feature: ajoute une chose\n');
+        return runCLI(['--json', 'validate', file]);
+      });
+
+      expect(exitCode).toBe(0);
+      expect((JSON.parse(stdout) as { valid: boolean }).valid).toBe(true);
     });
   });
 });
