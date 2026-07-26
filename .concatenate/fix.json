@@ -7,7 +7,7 @@
     },
     {
       "label": "Fixing with ESLint",
-      "command": "eslint . --fix --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue"
+      "command": "eslint . --fix --format pretty --cache --concurrency auto"
     }
   ]
 }

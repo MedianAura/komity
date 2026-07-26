@@ -1,3 +1,5 @@
 allowBuilds:
   # Postinstall télécharge le binaire natif de la plateforme. Requis par vite/vitest.
   esbuild: true
+  # Résolveur natif (napi) de eslint-plugin-import-x.
+  unrs-resolver: true

@@ -1,8 +1,0 @@
-/dist
-/coverage
-/node_modules
-/reports
-
-/src/typings/auto-imports.d.ts
-/automaton.config.mts
-/.eslintrc.cjs

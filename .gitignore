@@ -13,3 +13,4 @@ junit.xml
 # stryker temp files
 .stryker-tmp
 /reports
+.eslintcache

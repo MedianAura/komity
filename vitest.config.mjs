@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     include: ['./tests/unit/**/*.spec.ts'],
     // setupFiles: './tests/unit/vitest.setup.ts',
-    environment: 'happy-dom',
+    environment: 'node',
     globals: true,
     cache: false,
     coverage: {
