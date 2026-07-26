@@ -48,11 +48,6 @@ program
     await new BranchRunner().run(branch);
   });
 
-// TODO : Implement staging command
-// program.command('staging').action(async () => {
-//   await new CommitRunner().run();
-// });
-
 program
   .command('setup')
   .argument('<title>', 'Specify the title for the changelog')
