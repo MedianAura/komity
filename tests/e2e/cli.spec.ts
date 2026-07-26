@@ -52,6 +52,17 @@ describe.concurrent('komity', () => {
       expect(exitCode).not.toBe(0);
     });
 
+    // L'assertion inverse promise par #11 : avant #1, la ligne de corps
+    // satisfaisait le motif et le commit passait.
+    it("refuse un en-tête invalide qu'une ligne de corps rendait valide", async () => {
+      const { exitCode } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'fixed the login bug\n\nfix: this line is what actually satisfies the regex\n');
+        return runCLI(['validate', file]);
+      });
+
+      expect(exitCode).not.toBe(0);
+    });
+
     it('laisse passer un commit de merge', async () => {
       const { exitCode } = await withTemporaryDirectory(async (directory) => {
         const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', "Merge branch 'main' into feature\n");
