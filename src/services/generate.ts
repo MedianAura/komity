@@ -1,6 +1,8 @@
-import { format } from 'date-fns';
+// Voir commit.ts : imports par sous-chemin pour éviter les barils.
+import { format } from 'date-fns/format';
 import dedent from 'dedent';
-import { groupBy, orderBy } from 'lodash-es';
+import groupBy from 'lodash-es/groupBy.js';
+import orderBy from 'lodash-es/orderBy.js';
 import { registry } from 'tsyringe';
 import type { CommitModel } from '../models/commit.js';
 import { types } from '../models/questions/type.js';
