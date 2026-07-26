@@ -36,16 +36,18 @@ export class GitService {
   public getBranch(): string | undefined {
     const command = 'git';
 
-    const parameters = ['status'];
+    // `branch --show-current` plutôt que le parsing de `git status` : pas de
+    // dépendance à la locale de git, et une chaîne vide sur HEAD détaché.
+    const parameters = ['branch', '--show-current'];
     getDebugger().info(`${command} ${parameters}`);
 
-    const commitIO = execaSync(command, parameters);
-
-    const branch = /On branch (.)?/.exec(commitIO.message);
-
-    if (!branch) return undefined;
-
-    return branch[1];
+    try {
+      const branch = execaSync(command, parameters).stdout.trim();
+      return branch === '' ? undefined : branch;
+    } catch {
+      // Hors dépôt, ou git absent : la signature promet déjà l'optionalité.
+      return undefined;
+    }
   }
 
   public async commit(commitMessage: string): Promise<boolean | string> {
