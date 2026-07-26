@@ -1,4 +1,4 @@
-import { types } from '../models/questions/type.js';
+import { types } from '../models/commit-types.js';
 
 // Messages que git génère lui-même : aucun hook n'a à les refuser.
 const GENERATED_PREFIXES = ['Merge branch', 'Merge remote-tracking branch', 'Revert "', 'fixup!', 'squash!'];

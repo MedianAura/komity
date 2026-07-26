@@ -4,6 +4,7 @@ import { BranchRunner } from './controllers/branch-runner.js';
 import { CommitRunner } from './controllers/commit-runner.js';
 import { GenerateRunner } from './controllers/generate-runner.js';
 import { SetupRunner } from './controllers/setup-runner.js';
+import { TypesRunner } from './controllers/types-runner.js';
 import { ValidateRunner } from './controllers/validate-runner.js';
 import { handleError } from './helpers/handle-error.js';
 import { Logger } from './helpers/logger.js';
@@ -17,10 +18,26 @@ const packageJSON = JSON.parse(readFileSync(new URL('../package.json', import.me
   version: string;
 };
 
-program
+// La chaîne est capturée : `@commander-js/extra-typings` porte le typage des
+// options sur la valeur de retour, `program.opts()` resterait `{}`.
+const cli = program
   .name(packageJSON.name)
   .description(packageJSON.description ?? '')
-  .version(packageJSON.version);
+  .version(packageJSON.version)
+  // Global : une sous-commande le lit via `cli.opts()`. L'invocation est donc
+  // `komity --json types`, l'option précédant la sous-commande.
+  .option('--json', 'Machine-readable output');
+
+// La bannière descend dans un hook : avant, elle était écrite avant `parseAsync`
+// et polluait la sortie `--json` d'échappements ANSI.
+cli.hook('preAction', () => {
+  if (cli.opts().json) {
+    return;
+  }
+
+  Logger.clear();
+  Logger.title('Commit message generator');
+});
 
 program.command('commit', { isDefault: true }).action(async () => {
   await new CommitRunner().run();
@@ -49,6 +66,13 @@ program
   });
 
 program
+  .command('types')
+  .description('List the accepted commit types')
+  .action(async () => {
+    await new TypesRunner().run({ json: cli.opts().json });
+  });
+
+program
   .command('setup')
   .argument('<title>', 'Specify the title for the changelog')
   .action(async (title) => {
@@ -56,9 +80,6 @@ program
   });
 
 export async function run(): Promise<number> {
-  Logger.clear();
-  Logger.title('Commit message generator');
-
   try {
     await program.parseAsync();
   } catch (error: unknown) {

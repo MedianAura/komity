@@ -5,7 +5,7 @@ import groupBy from 'lodash-es/groupBy.js';
 import orderBy from 'lodash-es/orderBy.js';
 import { registry } from 'tsyringe';
 import type { CommitModel } from '../models/commit.js';
-import { types } from '../models/questions/type.js';
+import { types } from '../models/commit-types.js';
 
 export const ChangelogGeneratorServiceToken = Symbol('ChangelogGeneratorService');
 

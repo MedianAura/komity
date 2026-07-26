@@ -1,4 +1,4 @@
-import { execa, type Result } from 'execa';
+import { execa } from 'execa';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -11,8 +11,14 @@ const bin = path.join(root, 'bin/run.js');
  * Lance le CLI construit dans un sous-processus. `reject: false` : les cas
  * d'échec attendus sont des assertions sur `exitCode`, pas des throws.
  */
-export async function runCLI(arguments_: string[], options: { cwd?: string } = {}): Promise<Result> {
-  return execa(process.execPath, [bin, ...arguments_], {
+export interface CLIResult {
+  exitCode: number | undefined;
+  stderr: string;
+  stdout: string;
+}
+
+export async function runCLI(arguments_: string[], options: { cwd?: string } = {}): Promise<CLIResult> {
+  const result = await execa(process.execPath, [bin, ...arguments_], {
     cwd: options.cwd ?? root,
     reject: false,
     env: {
@@ -21,6 +27,14 @@ export async function runCLI(arguments_: string[], options: { cwd?: string } = {
       NODE_ENV: 'test',
     },
   });
+
+  // `stdout`/`stderr` sont typés en union par execa : on les fige en chaînes
+  // pour que les cas puissent faire un `JSON.parse` direct.
+  return {
+    exitCode: result.exitCode,
+    stdout: String(result.stdout ?? ''),
+    stderr: String(result.stderr ?? ''),
+  };
 }
 
 /** Répertoire temporaire jetable, hors de tout dépôt git. */

@@ -22,7 +22,7 @@ describe.concurrent('komity', () => {
     const { exitCode, stdout } = await runCLI(['--help']);
 
     expect(exitCode).toBe(0);
-    for (const command of ['commit', 'generate', 'validate', 'branch', 'setup']) {
+    for (const command of ['commit', 'generate', 'validate', 'branch', 'types', 'setup']) {
       expect(stdout).toContain(command);
     }
   });
@@ -31,6 +31,28 @@ describe.concurrent('komity', () => {
     const { exitCode } = await withTemporaryDirectory(async (directory) => runCLI(['--version'], { cwd: directory }));
 
     expect(exitCode).toBe(0);
+  });
+
+  describe('types', () => {
+    it('liste les huit types acceptés', async () => {
+      const { exitCode, stdout } = await runCLI(['types']);
+
+      expect(exitCode).toBe(0);
+      for (const type of ['feature', 'fix', 'style', 'refactor', 'maintenance', 'doc', 'test', 'dep']) {
+        expect(stdout).toContain(type);
+      }
+    });
+
+    // Le contrat agent : `stdout` doit se parser tel quel, sans bannière ni ANSI.
+    it('émet du JSON analysable sous --json', async () => {
+      const { exitCode, stdout } = await runCLI(['--json', 'types']);
+
+      expect(exitCode).toBe(0);
+
+      const payload = JSON.parse(stdout) as { schema: number; types: { value: string }[] };
+      expect(payload.schema).toBe(1);
+      expect(payload.types.map((type) => type.value)).toEqual(['feature', 'fix', 'style', 'refactor', 'maintenance', 'doc', 'test', 'dep']);
+    });
   });
 
   describe('validate', () => {
