@@ -26,6 +26,10 @@ export class ChangelogGeneratorService {
 
     this.addChanges(changes, grouped, ['feature'], '## Feature');
     this.addChanges(changes, grouped, ['fix'], '## Correction');
+    // `style` était déclaré dans les types mais n'avait aucune section : les
+    // commits concernés disparaissaient du changelog sans tomber dans « Other »,
+    // `groupBy` reconnaissant le type.
+    this.addChanges(changes, grouped, ['style'], '## Style');
     this.addChanges(changes, grouped, ['refactor', 'maintenance'], '## Refactor');
     // `perf` a sa propre section : sans elle un type canonique existant serait
     // absent du changelog sans le dire.
