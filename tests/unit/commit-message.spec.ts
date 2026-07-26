@@ -95,3 +95,43 @@ describe('validateCommitMessage', () => {
     expect(result.allowedTypes).toContain('fix');
   });
 });
+
+describe('alias conventional-commits', () => {
+  it.each([['feat'], ['docs'], ['chore'], ['ci'], ['build'], ['deps']])('accepte <%s> en lecture', (alias) => {
+    expect(isValidCommitMessage(`${alias}: quelque chose\n`)).toBe(true);
+  });
+
+  it('accepte un alias portant un scope', () => {
+    expect(isValidCommitMessage('feat(AB-12): quelque chose\n')).toBe(true);
+  });
+
+  // `perf` est un type canonique et non un alias : il a sa propre section de
+  // changelog, alors que `refactor` le classerait au mauvais endroit.
+  it('accepte <perf> comme type canonique', () => {
+    expect(isValidCommitMessage('perf: quelque chose\n')).toBe(true);
+  });
+
+  it('annonce les alias parmi les types acceptés', () => {
+    const result = validateCommitMessage('nope: quelque chose\n');
+
+    expect(result.allowedTypes).toContain('feat');
+    expect(result.allowedTypes).toContain('feature');
+    expect(result.allowedTypes).toContain('perf');
+  });
+
+  // Les alias n'ouvrent pas la casse : la correspondance reste exacte.
+  it('refuse un jeton connu mais capitalisé', () => {
+    const result = validateCommitMessage('Feat: quelque chose\n');
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((error) => error.rule)).toEqual(['type-unknown']);
+  });
+
+  // Un type connu qui casse sur la forme reste `format-invalid` : la correction
+  // à faire n'est pas la même que pour un jeton inconnu.
+  it('distingue une forme cassée sur un alias connu', () => {
+    const result = validateCommitMessage('feat:sans espace\n');
+
+    expect(result.errors.map((error) => error.rule)).toEqual(['format-invalid']);
+  });
+});

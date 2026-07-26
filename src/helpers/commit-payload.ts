@@ -1,4 +1,4 @@
-import { types } from '../models/commit-types.js';
+import { acceptedTypes, resolveType } from '../models/commit-types.js';
 import { SUBJECT_MAX_LENGTH } from './commit-message.js';
 import { KomityError } from './errors.js';
 
@@ -25,7 +25,7 @@ function fail(code: string, message: string, details: Record<string, unknown> = 
   throw new KomityError(code, message, details);
 }
 
-const allowedTypes = types.map((type) => type.value);
+const allowedTypes = acceptedTypes;
 
 export function parseCommitPayload(raw: string): CommitPayload {
   let parsed: unknown;
@@ -42,7 +42,8 @@ export function parseCommitPayload(raw: string): CommitPayload {
 
   const payload = parsed as Record<string, unknown>;
 
-  if (typeof payload.type !== 'string' || !allowedTypes.includes(payload.type)) {
+  const type = typeof payload.type === 'string' ? resolveType(payload.type) : undefined;
+  if (type === undefined) {
     fail('type-unknown', `Unknown commit type <${String(payload.type)}>.`, { allowedTypes });
   }
 
@@ -69,7 +70,10 @@ export function parseCommitPayload(raw: string): CommitPayload {
   }
 
   return {
-    type: payload.type,
+    // Forme canonique et non le jeton reçu : `--input {"type":"feat"}` écrit
+    // `feature:`. L'alias est une rampe d'entrée, pas une seconde orthographe
+    // dans l'historique.
+    type: type.value,
     scope: payload.scope as string | undefined,
     subject: payload.subject,
     body: payload.body as string | undefined,

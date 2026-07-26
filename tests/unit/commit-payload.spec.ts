@@ -58,6 +58,22 @@ describe('parseCommitPayload', () => {
     }
   });
 
+  // Canonique en sortie, permissif en entrée : `feat` est accepté mais c'est
+  // `feature` qui part dans l'historique, sinon un même dépôt accumule les deux
+  // orthographes.
+  it.each([
+    ['feat', 'feature'],
+    ['docs', 'doc'],
+    ['chore', 'maintenance'],
+    ['deps', 'dep'],
+  ])('canonicalise <%s> en <%s>', (alias, canonical) => {
+    expect(parseCommitPayload(`{"type":"${alias}","subject":"x"}`).type).toBe(canonical);
+  });
+
+  it("écrit la forme canonique dans le message assemblé à partir d'un alias", () => {
+    expect(assembleCommitMessage(parseCommitPayload('{"type":"feat","subject":"ajoute"}'))).toBe('feature: ajoute\n\n\n\n');
+  });
+
   it('annonce les types valides quand le type est inconnu', () => {
     try {
       parseCommitPayload('{"type":"nope","subject":"x"}');

@@ -27,6 +27,9 @@ export class ChangelogGeneratorService {
     this.addChanges(changes, grouped, ['feature'], '## Feature');
     this.addChanges(changes, grouped, ['fix'], '## Correction');
     this.addChanges(changes, grouped, ['refactor', 'maintenance'], '## Refactor');
+    // `perf` a sa propre section : sans elle un type canonique existant serait
+    // absent du changelog sans le dire.
+    this.addChanges(changes, grouped, ['perf'], '## Performance');
     this.addChanges(changes, grouped, ['doc'], '## Documentation');
     this.addChanges(changes, grouped, ['test'], '## Test');
     this.addChanges(changes, grouped, ['dep'], '## Dependencies');

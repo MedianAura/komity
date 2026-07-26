@@ -1,4 +1,4 @@
-import { types } from '../models/commit-types.js';
+import { acceptedTypes, resolveType } from '../models/commit-types.js';
 
 // Messages que git génère lui-même : aucun hook n'a à les refuser.
 const GENERATED_PREFIXES = ['Merge branch', 'Merge remote-tracking branch', 'Revert "', 'fixup!', 'squash!'];
@@ -34,12 +34,20 @@ export const SUBJECT_MAX_LENGTH = 100;
 /**
  * Ni `m` ni `g` : `m` ferait matcher n'importe quelle ligne du corps, ce qui
  * revenait à ne jamais valider l'en-tête.
+ *
+ * La forme et le type sont désormais décidés séparément : l'expression ne
+ * connaît que la grammaire `type(scope): sujet`, `resolveType` tranche seul de
+ * la validité du jeton. Sans ça il faudrait injecter une alternance de tous les
+ * alias dans la regex, et distinguer « type inconnu » de « forme cassée »
+ * demanderait une seconde expression.
  */
-function matchHeader(header: string): RegExpExecArray | null {
-  const validTypes = types.map((type) => type.value).join('|');
-  const regex = new RegExp(String.raw`^(${validTypes})(?:\(.*\))?:\s(.*)$`);
+const HEADER_SHAPE = /^([a-z]+)(?:\(.*\))?:\s(.*)$/;
 
-  return regex.exec(header);
+function matchHeader(header: string): { subject: string; token: string } | undefined {
+  const match = HEADER_SHAPE.exec(header);
+  if (match === null) return undefined;
+
+  return { token: match[1] ?? '', subject: match[2] ?? '' };
 }
 
 export function isValidCommitMessage(message: string): boolean {
@@ -66,8 +74,7 @@ const EXAMPLE_HEADER = 'fix(AB-12): correct the login redirect';
  */
 export function validateCommitMessage(message: string): ValidationResult {
   const header = extractHeader(message);
-  const allowedTypes = types.map((type) => type.value);
-  const result = { allowedTypes, header, valid: true, errors: [] as ValidationError[] };
+  const result = { allowedTypes: acceptedTypes, header, valid: true, errors: [] as ValidationError[] };
 
   if (isGeneratedCommit(header)) {
     return result;
@@ -79,8 +86,8 @@ export function validateCommitMessage(message: string): ValidationResult {
 
   const match = matchHeader(header);
 
-  if (match !== null) {
-    const subject = match[2] ?? '';
+  if (match !== undefined && resolveType(match.token) !== undefined) {
+    const subject = match.subject;
 
     if (subject.length > SUBJECT_MAX_LENGTH) {
       return {
@@ -99,12 +106,16 @@ export function validateCommitMessage(message: string): ValidationResult {
   }
 
   // Un `mot:` en tête distingue « type inconnu » de « forme cassée » — les deux
-  // corrections ne sont pas les mêmes.
-  const declaredType = /^([a-z]+)(?:\(.*\))?:/i.exec(header)?.[1];
-  const errors: ValidationError[] =
-    declaredType !== undefined && !allowedTypes.includes(declaredType)
-      ? [{ rule: 'type-unknown', message: `Unknown commit type <${declaredType}>.` }]
-      : [{ rule: 'format-invalid', message: `Header must read <type(scope): subject>, for example <${EXAMPLE_HEADER}>.` }];
+  // corrections ne sont pas les mêmes. La casse est tolérée ici uniquement pour
+  // nommer le jeton fautif : `Feature:` reste un type inconnu.
+  const declaredType = match?.token ?? /^([a-z]+)(?:\(.*\))?:/i.exec(header)?.[1];
+
+  // Un type connu qui échoue ici l'a fait sur la forme — `fix:sans espace` — pas
+  // sur le jeton. Les deux corrections ne sont pas les mêmes.
+  const isUnknownType = declaredType !== undefined && resolveType(declaredType) === undefined;
+  const errors: ValidationError[] = isUnknownType
+    ? [{ rule: 'type-unknown', message: `Unknown commit type <${declaredType ?? ''}>.` }]
+    : [{ rule: 'format-invalid', message: `Header must read <type(scope): subject>, for example <${EXAMPLE_HEADER}>.` }];
 
   return { ...result, valid: false, errors };
 }

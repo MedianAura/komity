@@ -34,11 +34,11 @@ describe.concurrent('komity', () => {
   });
 
   describe('types', () => {
-    it('liste les huit types acceptés', async () => {
+    it('liste les neuf types acceptés', async () => {
       const { exitCode, stdout } = await runCLI(['types']);
 
       expect(exitCode).toBe(0);
-      for (const type of ['feature', 'fix', 'style', 'refactor', 'maintenance', 'doc', 'test', 'dep']) {
+      for (const type of ['feature', 'fix', 'style', 'refactor', 'perf', 'maintenance', 'doc', 'test', 'dep']) {
         expect(stdout).toContain(type);
       }
     });
@@ -58,9 +58,19 @@ describe.concurrent('komity', () => {
 
       expect(exitCode).toBe(0);
 
-      const payload = JSON.parse(stdout) as { schema: number; types: { value: string }[] };
+      const payload = JSON.parse(stdout) as { schema: number; types: { aliases: string[]; value: string }[] };
       expect(payload.schema).toBe(1);
-      expect(payload.types.map((type) => type.value)).toEqual(['feature', 'fix', 'style', 'refactor', 'maintenance', 'doc', 'test', 'dep']);
+      expect(payload.types.map((type) => type.value)).toEqual(['feature', 'fix', 'style', 'refactor', 'perf', 'maintenance', 'doc', 'test', 'dep']);
+    });
+
+    // Les alias font partie du contrat publié : un agent qui écrit `feat:` doit
+    // pouvoir apprendre d'ici qu'il sera accepté.
+    it('publie les alias conventional-commits', async () => {
+      const { stdout } = await runCLI(['--json', 'types']);
+      const payload = JSON.parse(stdout) as { types: { aliases: string[]; value: string }[] };
+
+      expect(payload.types.find((type) => type.value === 'feature')?.aliases).toEqual(['feat']);
+      expect(payload.types.find((type) => type.value === 'fix')?.aliases).toEqual([]);
     });
   });
 
@@ -119,6 +129,17 @@ describe.concurrent('komity', () => {
     it('accepte un en-tête valide', async () => {
       const { exitCode } = await withTemporaryDirectory(async (directory) => {
         const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'feature: ajoute une chose\n');
+        return runCLI(['validate', file]);
+      });
+
+      expect(exitCode).toBe(0);
+    });
+
+    // La rampe d'entrée conventional-commits : un dépôt qui écrit déjà `feat:`
+    // peut brancher le hook sans réécrire ses conventions.
+    it('accepte un alias conventional-commits', async () => {
+      const { exitCode } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'feat(AB-12): ajoute une chose\n');
         return runCLI(['validate', file]);
       });
 

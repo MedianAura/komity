@@ -4,6 +4,7 @@ import { format } from 'date-fns/format';
 import { parse } from 'date-fns/parse';
 import capitalize from 'lodash-es/capitalize.js';
 import { sprintf } from 'sprintf-js';
+import { resolveType } from './commit-types.js';
 
 export class CommitModel {
   public hash!: string;
@@ -45,7 +46,11 @@ export class CommitModel {
   public setType(subject: string): void {
     const match = /^(.*?)[(:[]/m.exec(subject);
     if (match !== null) {
-      this.type = match[1] ?? '';
+      const token = match[1] ?? '';
+      // Canonicalisation à la lecture : un `feat:` déjà présent dans
+      // l'historique doit tomber dans la même section que `feature:`, sans quoi
+      // il disparaît sous « Other ».
+      this.type = resolveType(token)?.value ?? token;
     }
   }
 
