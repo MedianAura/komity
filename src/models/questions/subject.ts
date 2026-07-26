@@ -1,7 +1,7 @@
 import chalk from 'chalk';
-import { type InputQuestion } from 'inquirer';
+import { type DistinctQuestion } from 'inquirer';
 
-const SubjectQuestion: InputQuestion = {
+const SubjectQuestion: DistinctQuestion = {
   type: 'input',
   message: 'Commit message (100 chars max) :\n',
   name: 'subject',

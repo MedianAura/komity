@@ -1,6 +1,6 @@
-import { type InputQuestion } from 'inquirer';
+import { type DistinctQuestion } from 'inquirer';
 
-const DescriptionQuestion: InputQuestion = {
+const DescriptionQuestion: DistinctQuestion = {
   type: 'input',
   message: 'Changelog message :\n',
   name: 'description',

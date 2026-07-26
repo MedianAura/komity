@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { default as updateNotifier } from 'update-notifier';
+import updateNotifier from 'update-notifier';
 import { run } from '../dist/entry.js';
 
 // Depuis l'emplacement du module, pas process.cwd() : autrement update-notifier

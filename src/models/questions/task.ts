@@ -1,8 +1,8 @@
-import { type ConfirmQuestion, type InputQuestion } from 'inquirer';
+import { type DistinctQuestion } from 'inquirer';
 import { getFromContainer } from '@medianaura/di-manager';
 import { GitService, GitServiceToken } from '../../services/git.js';
 
-const TaskNumberQuestion: InputQuestion = {
+const TaskNumberQuestion: DistinctQuestion = {
   type: 'input',
   message: 'Issue Id :',
   name: 'task',
@@ -17,7 +17,7 @@ const TaskNumberQuestion: InputQuestion = {
   },
 };
 
-const hasTaskQuestion: ConfirmQuestion = {
+const TaskConfirmQuestion: DistinctQuestion = {
   type: 'confirm',
   name: 'isTaskAffected',
   message: 'Is the commit solving a issue ?',
@@ -38,6 +38,6 @@ function cleanBranch(branch: string): string | undefined {
   return undefined;
 }
 
-const TaskQuestion = [hasTaskQuestion, TaskNumberQuestion];
+const TaskQuestion: DistinctQuestion[] = [TaskConfirmQuestion, TaskNumberQuestion];
 
 export { TaskQuestion };

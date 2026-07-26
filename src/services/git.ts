@@ -18,7 +18,7 @@ export class GitService {
       exec(
         command,
         {
-          maxBuffer: Number.POSITIVE_INFINITY,
+          maxBuffer: Infinity,
         },
         (error, stdout) => {
           if (error) {

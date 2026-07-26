@@ -1,8 +1,8 @@
-import { type ConfirmQuestion } from 'inquirer';
+import { type DistinctQuestion } from 'inquirer';
 
-const LogQuestion: ConfirmQuestion = {
+const LogQuestion: DistinctQuestion = {
   type: 'confirm',
-  default: 'Y',
+  default: true,
   message: 'Add commit to changelog ?',
   name: 'log',
 };

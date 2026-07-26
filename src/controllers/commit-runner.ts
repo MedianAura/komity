@@ -54,10 +54,7 @@ export class CommitRunner {
 
     const head = this.buildHead(answers);
 
-    let logMessage = '';
-    if (answers.log) {
-      logMessage = `[log]`;
-    }
+    const logMessage = answers.log ? `[log]` : '';
 
     const commitMessage = [head, answers.description, logMessage].join('\n\n');
     this.cache.setCache(commitMessage);
@@ -65,10 +62,7 @@ export class CommitRunner {
   }
 
   private buildHead(answers: Answers): string {
-    let taskMessage = '';
-    if (answers.isTaskAffected) {
-      taskMessage = `(${answers.task.toUpperCase() as string})`;
-    }
+    const taskMessage = answers.isTaskAffected ? `(${answers.task.toUpperCase() as string})` : '';
 
     return sprintf('%(type)s%(task)s: %(description)s', {
       type: answers.type,

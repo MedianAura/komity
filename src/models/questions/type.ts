@@ -1,4 +1,4 @@
-import { type ListQuestion } from 'inquirer';
+import { type DistinctQuestion } from 'inquirer';
 import longest from 'longest';
 
 export const types = [
@@ -59,8 +59,9 @@ const choices = types.map((type) => {
   };
 });
 
-const TypeQuestion: ListQuestion = {
-  type: 'list',
+const TypeQuestion: DistinctQuestion = {
+  // `list` a été renommé `select` dans inquirer 10.
+  type: 'select',
   message: 'Commit Type :',
   choices,
   name: 'type',

@@ -12,7 +12,7 @@ export class ValidateRunner {
     }
 
     const validTypes = types.map((type) => type.value).join('|');
-    const regex = new RegExp(`^(${validTypes})(\\(.*\\))?:\\s.*$`, 'gm');
+    const regex = new RegExp(String.raw`^(${validTypes})(\(.*\))?:\s.*$`, 'gm');
 
     if (regex.exec(commitMessage) === null) {
       throw new Error('Commit is invalid.');
