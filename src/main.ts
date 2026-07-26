@@ -7,7 +7,6 @@ import { SetupRunner } from './controllers/setup-runner.js';
 import { TypesRunner } from './controllers/types-runner.js';
 import { ValidateRunner } from './controllers/validate-runner.js';
 import { handleError } from './helpers/handle-error.js';
-import { Logger } from './helpers/logger.js';
 
 // Résolu depuis l'emplacement du module, pas depuis process.cwd() : sinon on lit
 // le package.json du projet qui invoque komity. src/ et dist/ sont tous deux à un
@@ -27,17 +26,6 @@ const cli = program
   // Global : une sous-commande le lit via `cli.opts()`. L'invocation est donc
   // `komity --json types`, l'option précédant la sous-commande.
   .option('--json', 'Machine-readable output');
-
-// La bannière descend dans un hook : avant, elle était écrite avant `parseAsync`
-// et polluait la sortie `--json` d'échappements ANSI.
-cli.hook('preAction', () => {
-  if (cli.opts().json) {
-    return;
-  }
-
-  Logger.clear();
-  Logger.title('Commit message generator');
-});
 
 program.command('commit', { isDefault: true }).action(async () => {
   await new CommitRunner().run();

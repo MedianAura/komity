@@ -1,6 +1,7 @@
 import inquirer, { type Answers } from 'inquirer';
 import { sprintf } from 'sprintf-js';
 import { InjectDependency } from '@medianaura/di-manager';
+import { Logger } from '../helpers/logger.js';
 import { DescriptionQuestion, LogQuestion, SubjectQuestion, TaskQuestion, TypeQuestion } from '../models/questions/index.js';
 import { CacheService, CacheServiceToken } from '../services/cache.js';
 import { GitService, GitServiceToken } from '../services/git.js';
@@ -13,6 +14,12 @@ export class CommitRunner {
   private readonly cache!: CacheService;
 
   public async run(): Promise<void> {
+    // Seule commande interactive : elle seule efface l'écran et affiche la
+    // bannière. `validate` tourne en hook `commit-msg` — le faire ailleurs
+    // revenait à vider le terminal à chaque commit.
+    Logger.clear();
+    Logger.title('Commit message generator');
+
     const stagingIsClean = await this.git.isClean();
     if (stagingIsClean) {
       throw new Error('No files added to staging! Did you forget to run git add?');

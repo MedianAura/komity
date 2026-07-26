@@ -43,6 +43,15 @@ describe.concurrent('komity', () => {
       }
     });
 
+    // Régression : la bannière et l'effacement d'écran appartiennent à la seule
+    // commande interactive, `commit`.
+    it("n'affiche ni bannière ni effacement d'écran", async () => {
+      const { stdout } = await runCLI(['types']);
+
+      expect(stdout.startsWith('feature')).toBe(true);
+      expect(stdout).not.toContain('[KOMITY]');
+    });
+
     // Le contrat agent : `stdout` doit se parser tel quel, sans bannière ni ANSI.
     it('émet du JSON analysable sous --json', async () => {
       const { exitCode, stdout } = await runCLI(['--json', 'types']);
