@@ -3,6 +3,7 @@ import { execaSync } from 'execa';
 import { gitlog, type IOptions, type IParseCommit } from 'gitlog2';
 import { exec, spawn } from 'node:child_process';
 import { registry } from 'tsyringe';
+import { KomityError } from '../helpers/errors.js';
 import { Logger } from '../helpers/logger.js';
 import { getDebugger } from '../helpers/pino.js';
 
@@ -79,30 +80,57 @@ export class GitService {
     });
   }
 
+  /**
+   * Rafraîchit les tags depuis les remotes. Séparé de `getLatestTag` : c'est le
+   * seul appel réseau de `generate`, et le seul dont l'échec — hors ligne, remote
+   * qui refuse l'authentification — ne doit pas faire échouer la commande. Les
+   * tags locaux restent exploitables. Rend `false` plutôt que de lever, à
+   * l'appelant de décider quoi en dire.
+   */
+  public fetchTags(): boolean {
+    const command = 'git';
+    const parameters = ['fetch', '--all', '--tags'];
+    getDebugger().info(`${command} ${parameters}`);
+
+    try {
+      execaSync(command, parameters);
+      return true;
+    } catch (error: unknown) {
+      getDebugger().info(error instanceof Error ? error.message : String(error));
+      return false;
+    }
+  }
+
   public getLatestTag(): string | undefined {
     const command = 'git';
 
-    let parameters = ['fetch', '--all', '--tags'];
+    // Pas de garde `exitCode !== 0` : `execaSync` lève avant qu'elle puisse
+    // s'exécuter. On enveloppe donc, pour que `--json` rende un code stable au
+    // lieu d'une pile Execa brute.
+    let parameters = ['rev-list', '--exclude=alpha-*', '--tags', '--max-count=1'];
     getDebugger().info(`${command} ${parameters}`);
-    execaSync(command, parameters);
+    const commit = this.run(parameters).replace('\n', '');
 
-    parameters = ['rev-list', '--exclude=alpha-*', '--tags', '--max-count=1'];
-    getDebugger().info(`${command} ${parameters}`);
-    const commitIO = execaSync(command, parameters);
-    if (commitIO.exitCode !== 0) {
-      throw new Error(commitIO.message);
+    // Dépôt sans aucun tag : `rev-list` sort vide en code 0. Ce n'est pas une
+    // erreur, c'est un changelog qui part du premier commit.
+    if (commit === '') {
+      return undefined;
     }
-
-    const commit = commitIO.stdout.toString().replace('\n', '');
 
     parameters = ['describe', '--tags', commit];
     getDebugger().info(`${command} ${parameters}`);
-    const tag = execaSync(command, parameters);
-    if (tag.exitCode !== 0) {
-      throw new Error(tag.message);
-    }
+    const tag = this.run(parameters);
 
-    return tag.stdout.toString() ? tag.stdout.toString().toLowerCase().replace(/\n/, '') : undefined;
+    return tag ? tag.toLowerCase().replace(/\n/, '') : undefined;
+  }
+
+  private run(parameters: string[]): string {
+    try {
+      return execaSync('git', parameters).stdout.toString();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new KomityError('git-command-failed', `git ${parameters.join(' ')} failed.`, { command: `git ${parameters.join(' ')}`, stderr: message });
+    }
   }
 
   public async log(tag: string): Promise<IParseCommit[]> {

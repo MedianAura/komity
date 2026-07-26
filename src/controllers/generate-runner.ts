@@ -2,6 +2,7 @@ import fsExtra from 'fs-extra';
 import fs from 'node:fs';
 import path from 'node:path';
 import { InjectDependency } from '@medianaura/di-manager';
+import { Logger } from '../helpers/logger.js';
 import { reportSuccess } from '../helpers/output.js';
 import { CommitModel } from '../models/commit.js';
 import { ChangelogGeneratorService, ChangelogGeneratorServiceToken } from '../services/generate.js';
@@ -28,6 +29,14 @@ export class GenerateRunner {
       throw new Error(`The Changelog File doesn't contain <[//]: # "TEMPLATE">.`);
     }
 
+    // Sortie du réseau avant la lecture des tags. L'échec n'est pas fatal — les
+    // tags locaux suffisent — mais il est rapporté : un changelog dont la borne
+    // basse est un tag périmé est faux en silence, ce qui est pire que lent.
+    const fetched = this.git.fetchTags();
+    if (!fetched && !options.json) {
+      Logger.warn('Could not fetch tags from the remote; falling back on local tags.');
+    }
+
     const tag = await this.getCurrentTag();
 
     const list: CommitModel[] = [];
@@ -52,7 +61,7 @@ export class GenerateRunner {
 
     if (options.preview) {
       if (options.json) {
-        reportSuccess(true, '', { changelog: log, written: false });
+        reportSuccess(true, '', { changelog: log, written: false, fetchedTags: fetched });
         return;
       }
 
@@ -65,7 +74,7 @@ export class GenerateRunner {
     content = content.replace('[//]: # "TEMPLATE"', () => `[//]: # "TEMPLATE"\r\n\r\n${log}`);
     writeFileSync(changelogPath, content, { encoding: 'utf8' });
 
-    reportSuccess(options.json, 'Writing Changelog completed.', { path: changelogPath, written: true });
+    reportSuccess(options.json, 'Writing Changelog completed.', { path: changelogPath, written: true, fetchedTags: fetched });
   }
 
   private async getCurrentTag(): Promise<string> {
