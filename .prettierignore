@@ -7,3 +7,6 @@ tsconfig.*.json
 
 # généré par unplugin-auto-import
 src/typings/auto-imports.d.ts
+
+# notes de travail, alignées à la main
+.docs

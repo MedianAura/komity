@@ -8,7 +8,9 @@ const packageJSON = JSON.parse(readFileSync(path.join(root, 'package.json'), { e
   version: string;
 };
 
-describe('komity', () => {
+// Chaque cas paie ~1,9 s de démarrage du CLI (voir #4 et #10) : en série la
+// suite dure 12 s, en parallèle elle est bornée par le cas le plus lent.
+describe.concurrent('komity', () => {
   it('affiche sa version', async () => {
     const { exitCode, stdout } = await runCLI(['--version']);
 

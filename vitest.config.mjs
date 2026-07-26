@@ -32,6 +32,8 @@ export default defineConfig({
           // Les tests lancent `dist/` : il doit exister avant la première run.
           // En globalSetup plutôt qu'en `pretest` pour qu'un `vitest` nu reste correct.
           globalSetup: './tests/e2e/global-setup.ts',
+          // Les cas sont `concurrent` : il en faut autant de front que de tests.
+          maxConcurrency: 12,
           // Un sous-processus Node par cas, plus le build en amont.
           testTimeout: 30_000,
           hookTimeout: 60_000,
