@@ -69,11 +69,23 @@ describe('validateCommitMessage', () => {
     ['nope: quelque chose', 'type-unknown'],
     ['pas du tout un en-tête', 'format-invalid'],
     ['fix:sans espace', 'format-invalid'],
+    [`fix: ${'x'.repeat(101)}`, 'subject-too-long'],
+    [`fix(AB-12): ${'x'.repeat(101)}`, 'subject-too-long'],
   ])('classe <%s> en %s', (message, rule) => {
     const result = validateCommitMessage(message);
 
     expect(result.valid).toBe(false);
     expect(result.errors.map((error) => error.rule)).toEqual([rule]);
+  });
+
+  // La longueur porte sur le sujet seul : `type(scope): ` ne compte pas, sinon
+  // un scope long rognerait le budget de description.
+  it('mesure le sujet sans le préfixe de type', () => {
+    expect(validateCommitMessage(`fix(AB-12): ${'x'.repeat(100)}`).valid).toBe(true);
+  });
+
+  it('ne mesure pas la longueur des messages générés par git', () => {
+    expect(validateCommitMessage(`Merge branch '${'x'.repeat(200)}'`).valid).toBe(true);
   });
 
   it("expose l'en-tête isolé et les types acceptés", () => {

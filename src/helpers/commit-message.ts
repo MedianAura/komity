@@ -25,14 +25,21 @@ function isGeneratedCommit(header: string): boolean {
 }
 
 /**
+ * Longueur du sujet seul, hors `type(scope): `. C'est cette ligne que les
+ * visualiseurs d'historique affichent : au-delà, elle est tronquée et le
+ * commit devient illisible dans la liste.
+ */
+export const SUBJECT_MAX_LENGTH = 100;
+
+/**
  * Ni `m` ni `g` : `m` ferait matcher n'importe quelle ligne du corps, ce qui
  * revenait à ne jamais valider l'en-tête.
  */
-function isValidHeader(header: string): boolean {
+function matchHeader(header: string): RegExpExecArray | null {
   const validTypes = types.map((type) => type.value).join('|');
-  const regex = new RegExp(String.raw`^(${validTypes})(\(.*\))?:\s.*$`);
+  const regex = new RegExp(String.raw`^(${validTypes})(?:\(.*\))?:\s(.*)$`);
 
-  return regex.test(header);
+  return regex.exec(header);
 }
 
 export function isValidCommitMessage(message: string): boolean {
@@ -70,7 +77,24 @@ export function validateCommitMessage(message: string): ValidationResult {
     return { ...result, valid: false, errors: [{ rule: 'header-missing', message: 'The message has no header line.' }] };
   }
 
-  if (isValidHeader(header)) {
+  const match = matchHeader(header);
+
+  if (match !== null) {
+    const subject = match[2] ?? '';
+
+    if (subject.length > SUBJECT_MAX_LENGTH) {
+      return {
+        ...result,
+        valid: false,
+        errors: [
+          {
+            rule: 'subject-too-long',
+            message: `Subject must be ${SUBJECT_MAX_LENGTH.toString(10)} characters or fewer; it is ${subject.length.toString(10)}.`,
+          },
+        ],
+      };
+    }
+
     return result;
   }
 

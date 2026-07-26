@@ -1,7 +1,6 @@
 import { types } from '../models/commit-types.js';
+import { SUBJECT_MAX_LENGTH } from './commit-message.js';
 import { KomityError } from './errors.js';
-
-const SUBJECT_MAX_LENGTH = 100;
 
 export interface CommitPayload {
   body?: string;
