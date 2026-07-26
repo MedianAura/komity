@@ -8,8 +8,6 @@
 /node_modules
 /coverage
 oclif.manifest.json
-yarn.lock
-pnpm-lock.yaml
 junit.xml
 
 # stryker temp files

@@ -1,0 +1,3 @@
+allowBuilds:
+  # Postinstall télécharge le binaire natif de la plateforme. Requis par vite/vitest.
+  esbuild: true

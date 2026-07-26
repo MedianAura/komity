@@ -5,6 +5,7 @@
   "license": "MIT",
   "author": "MedianAura",
   "type": "module",
+  "packageManager": "pnpm@11.15.1",
   "main": "dist/entry.js",
   "types": "dist/entry.d.ts",
   "bin": {
@@ -48,7 +49,6 @@
     "longest": "^2.0.1",
     "pino": "^9.1.0",
     "pino-pretty": "^11.2.0",
-    "read-pkg": "^9.0.1",
     "reflect-metadata": "^0.2.2",
     "sprintf-js": "^1.1.3",
     "ts-custom-error": "^3.3.1",
