@@ -55,7 +55,9 @@ export class GenerateRunner {
       return;
     }
 
-    content = content.replace('[//]: # "TEMPLATE"', `[//]: # "TEMPLATE"\r\n\r\n${log}`);
+    // Fonction de remplacement : un `$&` ou `$1` dans un message de commit serait
+    // sinon réinterprété par String#replace et corromprait le changelog.
+    content = content.replace('[//]: # "TEMPLATE"', () => `[//]: # "TEMPLATE"\r\n\r\n${log}`);
     writeFileSync(changelogPath, content, { encoding: 'utf8' });
 
     Logger.success('Writing Changelog completed.');
