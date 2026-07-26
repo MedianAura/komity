@@ -1,4 +1,4 @@
-import { readPackageSync } from 'read-pkg';
+import { readFileSync } from 'node:fs';
 import { program } from '@commander-js/extra-typings';
 import { BranchRunner } from './controllers/branch-runner.js';
 import { CommitRunner } from './controllers/commit-runner.js';
@@ -8,7 +8,14 @@ import { ValidateRunner } from './controllers/validate-runner.js';
 import { handleError } from './helpers/handle-error.js';
 import { Logger } from './helpers/logger.js';
 
-const packageJSON = readPackageSync();
+// Résolu depuis l'emplacement du module, pas depuis process.cwd() : sinon on lit
+// le package.json du projet qui invoque komity. src/ et dist/ sont tous deux à un
+// niveau sous la racine, donc le chemin relatif vaut en dev comme en build.
+const packageJSON = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), { encoding: 'utf8' })) as {
+  description?: string;
+  name: string;
+  version: string;
+};
 
 program
   .name(packageJSON.name)

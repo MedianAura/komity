@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-import { readPackageSync } from 'read-pkg';
+import { readFileSync } from 'node:fs';
 import { default as updateNotifier } from 'update-notifier';
 import { run } from '../dist/entry.js';
 
-const packageJSON = await readPackageSync();
+// Depuis l'emplacement du module, pas process.cwd() : autrement update-notifier
+// interroge le registre pour le package du projet appelant.
+const packageJSON = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), { encoding: 'utf8' }));
 
 updateNotifier({
   pkg: packageJSON,
