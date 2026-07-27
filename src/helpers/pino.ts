@@ -14,8 +14,11 @@ function create(): Logger {
     return pino({ level: 'silent' });
   }
 
+  // `destination: 2`, stderr : par défaut pino-pretty écrit sur stdout, où les
+  // lignes de debug s'intercalaient dans la charge utile `--json` et cassaient le
+  // `JSON.parse` de l'appelant. Un diagnostic n'est pas une sortie de commande.
   const { build } = require('pino-pretty') as typeof import('pino-pretty');
-  const debug = pino(build({ colorize: true }));
+  const debug = pino(build({ colorize: true, destination: 2 }));
   debug.level = 'debug';
 
   return debug;
