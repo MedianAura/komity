@@ -4,6 +4,15 @@ import { KomityError } from './errors.js';
 
 export interface CommitPayload {
   body?: string;
+  /**
+   * Entrée de changelog, en une ligne. Deux emplacements distincts et c'est le
+   * but : `body` porte le pourquoi, long, pour l'archéologie ; `changelog` porte
+   * ce qu'on dit à l'utilisateur. Sans ça un agent doit deviner quelle quantité
+   * de détail est publiable, et se trompe.
+   *
+   * Implique `log` : `[log] texte` est émis même si `log` est absent.
+   */
+  changelog?: string;
   log?: boolean;
   scope?: string;
   subject: string;
@@ -18,7 +27,14 @@ export function assembleCommitMessage(payload: CommitPayload): string {
   const scope = payload.scope ? `(${payload.scope.toUpperCase()})` : '';
   const head = `${payload.type}${scope}: ${payload.subject}`;
 
-  return [head, payload.body ?? '', payload.log ? '[log]' : ''].join('\n\n');
+  let log = '';
+  if (payload.changelog !== undefined && payload.changelog.trim() !== '') {
+    log = `[log] ${payload.changelog.trim()}`;
+  } else if (payload.log) {
+    log = '[log]';
+  }
+
+  return [head, payload.body ?? '', log].join('\n\n');
 }
 
 function fail(code: string, message: string, details: Record<string, unknown> = {}): never {
@@ -69,6 +85,16 @@ export function parseCommitPayload(raw: string): CommitPayload {
     fail('invalid-payload', '<log> must be a boolean.');
   }
 
+  if (payload.changelog !== undefined && typeof payload.changelog !== 'string') {
+    fail('invalid-payload', '<changelog> must be a string.');
+  }
+
+  // Le marqueur tient sur une ligne : un saut ferait retomber la suite dans le
+  // corps, où elle serait interprétée comme du texte de commit ordinaire.
+  if (typeof payload.changelog === 'string' && payload.changelog.includes('\n')) {
+    fail('invalid-payload', '<changelog> must be a single line.');
+  }
+
   return {
     // Forme canonique et non le jeton reçu : `--input {"type":"feat"}` écrit
     // `feature:`. L'alias est une rampe d'entrée, pas une seconde orthographe
@@ -77,6 +103,7 @@ export function parseCommitPayload(raw: string): CommitPayload {
     scope: payload.scope as string | undefined,
     subject: payload.subject,
     body: payload.body as string | undefined,
+    changelog: payload.changelog as string | undefined,
     log: (payload.log as boolean | undefined) ?? false,
   };
 }

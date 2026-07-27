@@ -19,6 +19,22 @@ describe('assembleCommitMessage', () => {
     expect(message).toBe('feature: ajoute\n\ndétail\n\n[log]');
   });
 
+  // Les deux emplacements sont distincts : le corps garde le pourquoi, `[log]`
+  // porte ce qui sera publié.
+  it("attache l'entrée de changelog au marqueur", () => {
+    const message = assembleCommitMessage({ type: 'feature', subject: 'ajoute', body: 'quinze lignes de raisonnement', changelog: 'Ajoute la commande types' });
+
+    expect(message).toBe('feature: ajoute\n\nquinze lignes de raisonnement\n\n[log] Ajoute la commande types');
+  });
+
+  it('implique le marqueur sans que `log` soit demandé', () => {
+    expect(assembleCommitMessage({ type: 'fix', subject: 'corrige', changelog: 'Corrige la redirection' })).toContain('[log] Corrige la redirection');
+  });
+
+  it('ignore une entrée de changelog vide', () => {
+    expect(assembleCommitMessage({ type: 'fix', subject: 'corrige', changelog: ' '.repeat(3) })).toBe('fix: corrige\n\n\n\n');
+  });
+
   // Le contrat de l'issue : ce que komity assemble doit passer komity validate.
   it('produit un message que la validation accepte', () => {
     const message = assembleCommitMessage({ type: 'fix', scope: 'ab-12', subject: 'corrige', body: 'détail', log: true });
@@ -34,6 +50,7 @@ describe('parseCommitPayload', () => {
       scope: undefined,
       subject: 'corrige',
       body: undefined,
+      changelog: undefined,
       log: false,
     });
   });
@@ -47,6 +64,8 @@ describe('parseCommitPayload', () => {
     [`{"type":"fix","subject":"${'x'.repeat(101)}"}`, 'subject-too-long'],
     ['{"type":"fix","subject":"x","scope":12}', 'invalid-payload'],
     ['{"type":"fix","subject":"x","log":"yes"}', 'invalid-payload'],
+    ['{"type":"fix","subject":"x","changelog":12}', 'invalid-payload'],
+    [String.raw`{"type":"fix","subject":"x","changelog":"deux\nlignes"}`, 'invalid-payload'],
   ])('rejette %s avec le code %s', (raw, code) => {
     expect(() => parseCommitPayload(raw)).toThrow(KomityError);
 

@@ -6,6 +6,31 @@ import capitalize from 'lodash-es/capitalize.js';
 import { sprintf } from 'sprintf-js';
 import { resolveType } from './commit-types.js';
 
+// `[log]` seul : tout le corps sert d'entrée de changelog, la convention
+// d'origine du dépôt. `[log] texte` : l'entrée est ce texte et le reste du corps
+// est ignoré. Un corps écrit par un agent fait quinze lignes et porte ses
+// remorques — le publier tel quel dans un changelog n'a pas de sens.
+// Le séparateur exige un premier caractère non blanc dans la capture : avec
+// `[ \t]*(.*)` les deux quantificateurs se disputent les espaces, ce que
+// `regexp/no-super-linear-backtracking` refuse à juste titre.
+const LOG_LINE = /^\[log\](?:[ \t]+(\S.*))?$/;
+
+// Les remorques git n'ont leur place dans aucun changelog, quelle que soit la
+// forme du marqueur.
+const TRAILER = /^(?:co-authored-by|signed-off-by|closes|refs|fixes|resolves)\b/i;
+
+function extractEntry(body: string): string {
+  const lines = body.split('\n');
+
+  for (const line of lines) {
+    const entry = LOG_LINE.exec(line.trim())?.[1]?.trim();
+    if (entry !== undefined && entry !== '') return entry;
+  }
+
+  // Marqueur nu : le corps entier fait l'entrée, la ligne de marqueur exclue.
+  return lines.filter((line) => !LOG_LINE.test(line.trim())).join('\n');
+}
+
 export class CommitModel {
   public hash!: string;
   public author!: string;
@@ -32,7 +57,7 @@ export class CommitModel {
 
   public setBody(value: string): void {
     if (value.trim() === '') return;
-    this.description = value;
+    this.description = extractEntry(value);
     this.sanitizeDescription();
   }
 
@@ -77,7 +102,7 @@ export class CommitModel {
   private sanitizeDescription(): void {
     this.description = this.description
       .split('\n')
-      .filter((line) => line.trim() !== '' && line !== '[log]')
+      .filter((line) => line.trim() !== '' && !TRAILER.test(line.trim()))
       .map((line) => {
         line = capitalize(line);
 
