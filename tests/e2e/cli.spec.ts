@@ -74,6 +74,23 @@ describe.concurrent('komity', () => {
     });
   });
 
+  // Régression : `setup` écrit le marqueur en apostrophes et `generate` n'en
+  // reconnaissait que la forme en guillemets doubles. Les deux commandes ne
+  // composaient donc pas, et rien ne l'attrapait.
+  describe('setup puis generate', () => {
+    it('lit le marqueur que setup vient décrire', async () => {
+      const { exitCode, stdout } = await withTemporaryDirectory(async (directory) => {
+        await runCLI(['setup', 'Mon Projet'], { cwd: directory });
+        return runCLI(['--json', 'generate', '1.0.0', '--preview'], { cwd: directory });
+      });
+
+      // Le répertoire n'est pas un dépôt git, donc la commande échoue — mais sur
+      // git, ce qui prouve qu'elle est passée le contrôle du marqueur.
+      expect(exitCode).not.toBe(0);
+      expect((JSON.parse(stdout) as { error: { code: string } }).error.code).toBe('git-command-failed');
+    });
+  });
+
   describe('commit --input', () => {
     it("assemble le message et ne l'écrit pas dans le dépôt", async () => {
       const payload = JSON.stringify({ type: 'fix', scope: 'ab-12', subject: 'corrige la redirection' });

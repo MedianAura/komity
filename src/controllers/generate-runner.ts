@@ -10,6 +10,12 @@ import { GitService, GitServiceToken } from '../services/git.js';
 
 const { writeFileSync } = fsExtra;
 
+// Les deux styles de guillemets : `setup` écrit le marqueur en apostrophes et
+// Prettier reformate les commentaires markdown dans un sens ou dans l'autre. Ne
+// reconnaître que la forme en guillemets doubles faisait échouer `generate` sur
+// le fichier que `setup` venait d'écrire.
+const TEMPLATE_MARKER = /\[\/\/\]: # (["'])TEMPLATE\1/;
+
 export class GenerateRunner {
   @InjectDependency(GitServiceToken)
   private readonly git!: GitService;
@@ -25,7 +31,7 @@ export class GenerateRunner {
     }
 
     let content = fs.readFileSync(changelogPath, { encoding: 'utf8' });
-    if (!content.includes('[//]: # "TEMPLATE"')) {
+    if (!TEMPLATE_MARKER.test(content)) {
       throw new Error(`The Changelog File doesn't contain <[//]: # "TEMPLATE">.`);
     }
 
@@ -71,7 +77,7 @@ export class GenerateRunner {
 
     // Fonction de remplacement : un `$&` ou `$1` dans un message de commit serait
     // sinon réinterprété par String#replace et corromprait le changelog.
-    content = content.replace('[//]: # "TEMPLATE"', () => `[//]: # "TEMPLATE"\r\n\r\n${log}`);
+    content = content.replace(TEMPLATE_MARKER, (marker) => `${marker}\r\n\r\n${log}`);
     writeFileSync(changelogPath, content, { encoding: 'utf8' });
 
     reportSuccess(options.json, 'Writing Changelog completed.', { path: changelogPath, written: true, fetchedTags: fetched });
