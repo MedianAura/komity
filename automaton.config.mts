@@ -17,6 +17,10 @@ export default () => {
           },
           {
             type: 'cmd',
+            cmd: 'npm whoami',
+          },
+          {
+            type: 'cmd',
             cmd: 'automaton package',
           },
           {
@@ -37,15 +41,15 @@ export default () => {
           },
           {
             type: 'cmd',
+            cmd: 'npm publish --access public',
+          },
+          {
+            type: 'cmd',
             cmd: 'git push',
           },
           {
             type: 'cmd',
             cmd: 'git push --tags --no-verify',
-          },
-          {
-            type: 'cmd',
-            cmd: 'npm publish --access public',
           },
         ],
         prompts: [getVersionPrompt],
