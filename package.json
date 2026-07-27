@@ -1,7 +1,10 @@
 {
   "name": "@medianaura/komity",
-  "version": "0.3.0",
-  "repository": "https://github.com/MedianAura/komity",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MedianAura/komity.git"
+  },
   "license": "MIT",
   "author": "MedianAura",
   "type": "module",
@@ -9,7 +12,7 @@
   "main": "dist/entry.js",
   "types": "dist/entry.d.ts",
   "bin": {
-    "komity": "./bin/run.js"
+    "komity": "bin/run.js"
   },
   "files": [
     "./bin",
