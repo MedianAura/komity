@@ -62,7 +62,14 @@ export class CommitModel {
   }
 
   public setTask(subject: string): void {
-    const match = /\((\w+-\d+|\d+)?\)/.exec(subject);
+    // Le scope est un lien vers le gestionnaire de tâches : `JIRA-99999`,
+    // `REDMINE-Bob`, ou `#999` pour GitHub/GitLab. Rien d'autre — `(#99-doing
+    // -something)` n'est pas un scope et ne doit pas être lu comme `#99`. Le
+    // `\d+` nu reste accepté : il est déjà dans l'historique du dépôt.
+    //
+    // Ancrée sur l'en-tête : non ancrée, elle allait chercher la première
+    // parenthèse venue et tirait une tâche d'un `(12)` du sujet.
+    const match = /^\w+\((#\d+|[a-z]+-[a-z\d]+|\d+)\):/i.exec(subject);
     if (match !== null && match[1]) {
       this.task = match[1].toUpperCase();
     }

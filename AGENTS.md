@@ -95,7 +95,7 @@ is written to the repository — the message is only assembled and returned.
 | ----------- | ---------------- | ------------------------------------------------------------------------ |
 | `type`      | string, required | canonical value or alias                                                 |
 | `subject`   | string, required | 100 characters or fewer, measured **without** the `type(scope): ` prefix |
-| `scope`     | string           | issue id; uppercased into `type(SCOPE): subject`                         |
+| `scope`     | string           | task id alone — `JIRA-99999`, `REDMINE-Bob`, `#999`. Never a slug        |
 | `body`      | string           | the _why_. Long is fine. This is not what the changelog publishes        |
 | `changelog` | string           | one line, published in the changelog. Implies the `[log]` marker         |
 | `log`       | boolean          | legacy marker: publish the **whole body** to the changelog               |

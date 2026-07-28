@@ -24,18 +24,23 @@ const TaskConfirmQuestion: DistinctQuestion = {
   default: true,
 };
 
+// Le scope est un lien vers le gestionnaire de tâches, pas une étiquette : seul
+// l'identifiant y a sa place. Une branche `9-select-nested-actions` porte le
+// numéro d'issue puis un slug — proposer `9-select` donnerait un lien mort.
+const BRANCH_ISSUE = /^(\d+)(?:-|$)/;
+const BRANCH_TICKET = /^([a-z]+-[a-z\d]+)(?:-|$)/i;
+
 function cleanBranch(branch: string): string | undefined {
-  let cleanBranch = (branch.split('/').pop() ?? '').split('-');
+  const segment = branch.split('/').pop() ?? '';
 
-  if (cleanBranch.length > 2) {
-    cleanBranch = cleanBranch.splice(0, 2);
+  // Un numéro nu en tête est une issue GitHub/GitLab : c'est la forme `#999`
+  // qui en fait un lien, pas le numéro seul.
+  const issue = BRANCH_ISSUE.exec(segment)?.[1];
+  if (issue !== undefined) {
+    return `#${issue}`;
   }
 
-  if (cleanBranch.length === 2) {
-    return cleanBranch.join('-').toLowerCase();
-  }
-
-  return undefined;
+  return BRANCH_TICKET.exec(segment)?.[1]?.toLowerCase();
 }
 
 const TaskQuestion: DistinctQuestion[] = [TaskConfirmQuestion, TaskNumberQuestion];

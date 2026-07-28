@@ -95,6 +95,9 @@ Rules:
 
 - header reads `type(scope): subject`, with a space after the colon
 - `type` is one of the accepted types or aliases
+- `scope`, when present, is a task id and nothing else — `JIRA-99999`, `REDMINE-Bob`, or
+  `#999` for GitHub/GitLab. It is what links the commit to the tracker, so a trailing slug
+  (`#999-doing-something`) is not a scope
 - `subject` is 100 characters or fewer, measured **without** the `type(scope): ` prefix
 - git's own messages (`Merge branch`, `Revert "`, `fixup!`, `squash!`) always pass
 
