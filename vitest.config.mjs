@@ -15,6 +15,12 @@ export default defineConfig({
       include: ['src/**/*.*'],
       exclude: ['src/**/entry.ts', 'src/**/index.ts', 'src/**/*.d.ts'],
       all: true,
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+      },
     },
     projects: [
       {
