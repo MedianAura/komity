@@ -41,13 +41,24 @@ export const SUBJECT_MAX_LENGTH = 100;
  * alias dans la regex, et distinguer « type inconnu » de « forme cassée »
  * demanderait une seconde expression.
  */
-const HEADER_SHAPE = /^([a-z]+)(?:\(.*\))?:\s(.*)$/;
+const HEADER_SHAPE = /^([a-z]+)(?:\((.*)\))?:\s(.*)$/;
 
-function matchHeader(header: string): { subject: string; token: string } | undefined {
+export interface ParsedHeader {
+  scope: string;
+  subject: string;
+  token: string;
+}
+
+/**
+ * Le scope est capturé alors que la validation ne s'en sert pas : le lint doit
+ * pouvoir répondre « y en avait-il un ». Sans ça, un sujet finissant par
+ * `(#54)` est indiscernable d'un sujet dont le scope porte déjà la tâche.
+ */
+export function parseHeader(header: string): ParsedHeader | undefined {
   const match = HEADER_SHAPE.exec(header);
   if (match === null) return undefined;
 
-  return { token: match[1] ?? '', subject: match[2] ?? '' };
+  return { token: match[1] ?? '', scope: match[2] ?? '', subject: match[3] ?? '' };
 }
 
 export function isValidCommitMessage(message: string): boolean {
@@ -84,7 +95,7 @@ export function validateCommitMessage(message: string): ValidationResult {
     return { ...result, valid: false, errors: [{ rule: 'header-missing', message: 'The message has no header line.' }] };
   }
 
-  const match = matchHeader(header);
+  const match = parseHeader(header);
 
   if (match !== undefined && resolveType(match.token) !== undefined) {
     const subject = match.subject;

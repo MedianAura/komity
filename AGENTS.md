@@ -103,9 +103,32 @@ and returned.
   "schema": 1,
   "ok": true,
   "committed": false,
-  "message": "feature: add the types command\n\n\n\n[log] Adds the types command"
+  "message": "feature: add the types command\n\n\n\n[log] Adds the types command",
+  "changelogEntry": "Adds the types command.",
+  "warnings": []
 }
 ```
+
+`changelogEntry` is the exact text `generate` will publish, derived by the same code the
+changelog uses. `null` when the commit carries no `[log]`. Read it on the dry run — otherwise
+the entry stays invisible until the next `generate`, possibly weeks later.
+
+## Warnings
+
+Some payloads are legal, commit cleanly, and do the wrong thing. Those are not validation
+errors, so they come back in a separate `warnings` array — on `commit` and on `validate`
+alike. The human-readable form goes to stderr in both modes.
+
+**A warning never changes the exit code.** Legal is legal; the array is the signal.
+
+| code                       | field       | what it means                                                                                   |
+| -------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `subject-trailing-task`    | `subject`   | subject ends in `(#54)` with no scope — the changelog reads the scope only, so it finds no task |
+| `changelog-entry-too-long` | `changelog` | a bare `[log]` would publish more than three lines; set `changelog` for a one-line entry        |
+
+`subject-trailing-task` is the pre-0.3.1 form. Anything that learned the convention from
+older commits in a repository's history reproduces it, and the failure is silent: the commit
+looks right and simply never appears in `generate` output with a task attached.
 
 ### Payload fields
 
@@ -150,6 +173,7 @@ Exit code is 0 when valid, non-zero otherwise. The payload is written either way
   "valid": false,
   "header": "nope: something",
   "errors": [{ "rule": "type-unknown", "message": "Unknown commit type <nope>." }],
+  "warnings": [],
   "allowedTypes": ["feature", "feat", "fix", "..."],
   "example": "fix(AB-12): correct the login redirect"
 }

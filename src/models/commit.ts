@@ -19,6 +19,32 @@ const LOG_LINE = /^\[log\](?:[ \t]+(\S.*))?$/;
 // forme du marqueur.
 const TRAILER = /^(?:co-authored-by|signed-off-by|closes|refs|fixes|resolves)\b/i;
 
+/**
+ * Chemin unique d'extraction : `generate` et la prévisualisation du dry run
+ * passent tous les deux ici. Réécrite d'un bord, la prévisualisation
+ * annoncerait une entrée que le changelog ne produirait pas — soit exactement
+ * le silence que #16 cherche à casser.
+ */
+export function extractChangelogEntry(body: string): string {
+  return sanitizeEntry(extractEntry(body));
+}
+
+function sanitizeEntry(entry: string): string {
+  return entry
+    .split('\n')
+    .filter((line) => line.trim() !== '' && !TRAILER.test(line.trim()))
+    .map((line) => {
+      line = capitalize(line);
+
+      if (!line.endsWith('.')) {
+        line += '.';
+      }
+
+      return line;
+    })
+    .join('\n');
+}
+
 function extractEntry(body: string): string {
   const lines = body.split('\n');
 
@@ -57,8 +83,7 @@ export class CommitModel {
 
   public setBody(value: string): void {
     if (value.trim() === '') return;
-    this.description = extractEntry(value);
-    this.sanitizeDescription();
+    this.description = extractChangelogEntry(value);
   }
 
   public setTask(subject: string): void {
@@ -104,21 +129,5 @@ export class CommitModel {
     }
 
     return sprintf(template, info);
-  }
-
-  private sanitizeDescription(): void {
-    this.description = this.description
-      .split('\n')
-      .filter((line) => line.trim() !== '' && !TRAILER.test(line.trim()))
-      .map((line) => {
-        line = capitalize(line);
-
-        if (!line.endsWith('.')) {
-          line += '.';
-        }
-
-        return line;
-      })
-      .join('\n');
   }
 }

@@ -1,9 +1,11 @@
 import inquirer, { type Answers } from 'inquirer';
 import { InjectDependency } from '@medianaura/di-manager';
 import { resolveCommitInput } from '../helpers/commit-input.js';
+import { lintCommitMessage, previewChangelogEntry } from '../helpers/commit-lint.js';
 import { assembleCommitMessage, type CommitPayload, parseCommitPayload } from '../helpers/commit-payload.js';
 import { KomityError } from '../helpers/errors.js';
 import { Logger } from '../helpers/logger.js';
+import { reportWarnings } from '../helpers/output.js';
 import { SCHEMA_VERSION } from '../helpers/schema.js';
 import { DescriptionQuestion, LogQuestion, SubjectQuestion, TaskQuestion, TypeQuestion } from '../models/questions/index.js';
 import { CacheService, CacheServiceToken } from '../services/cache.js';
@@ -58,6 +60,11 @@ export class CommitRunner {
 
   private async runFromPayload(input: string, options: CommitOptions): Promise<void> {
     const commitMessage = assembleCommitMessage(parseCommitPayload(await resolveCommitInput(input)));
+    const warnings = lintCommitMessage(commitMessage);
+
+    // Émis même avec `--commit` : les taire une fois le commit écrit rendrait
+    // le seul appel qui compte silencieux.
+    reportWarnings(warnings);
 
     // Sans `--commit`, komity n'écrit rien dans le dépôt : l'assemblage seul.
     if (options.commit) {
@@ -67,7 +74,23 @@ export class CommitRunner {
     }
 
     if (options.json) {
-      console.log(JSON.stringify({ schema: SCHEMA_VERSION, ok: true, committed: Boolean(options.commit), message: commitMessage }));
+      console.log(
+        JSON.stringify({
+          schema: SCHEMA_VERSION,
+          ok: true,
+          committed: Boolean(options.commit),
+          message: commitMessage,
+          // Ce que `generate` publiera, dérivé par le même code : sans ça
+          // l'entrée reste invisible jusqu'au prochain `generate`, des semaines
+          // plus tard.
+          // `null` et non `undefined` : sur le fil, `undefined` fait disparaître
+          // la clé, et un consommateur devrait alors distinguer « absente » de
+          // « nulle » pour une seule et même chose.
+          // eslint-disable-next-line unicorn/no-null
+          changelogEntry: previewChangelogEntry(commitMessage) ?? null,
+          warnings,
+        }),
+      );
       return;
     }
 

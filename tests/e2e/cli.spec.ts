@@ -157,6 +157,22 @@ describe.concurrent('komity', () => {
       expect(payload.committed).toBe(true);
     });
 
+    it('prévisualise l’entrée de changelog du dry run', async () => {
+      const payload = JSON.stringify({ type: 'fix', scope: '#16', subject: 'corrige', body: 'quinze lignes de raisonnement', changelog: 'Corrige la redirection' });
+      const { stdout } = await runCLI(['--json', 'commit', '--input', payload]);
+
+      const { changelogEntry, warnings } = JSON.parse(stdout) as { changelogEntry: null | string; warnings: unknown[] };
+      expect(changelogEntry).toBe('Corrige la redirection.');
+      expect(warnings).toEqual([]);
+    });
+
+    it('ne prévisualise rien sans marqueur', async () => {
+      const payload = JSON.stringify({ type: 'fix', subject: 'corrige' });
+      const { stdout } = await runCLI(['--json', 'commit', '--input', payload]);
+
+      expect((JSON.parse(stdout) as { changelogEntry: null | string }).changelogEntry).toBeNull();
+    });
+
     // Aller-retour : ce que komity assemble doit passer komity validate.
     it('produit un message que validate accepte', async () => {
       const payload = JSON.stringify({ type: 'fix', scope: 'ab-12', subject: 'corrige', body: 'détail', log: true });
@@ -219,6 +235,34 @@ describe.concurrent('komity', () => {
       });
 
       expect(exitCode).not.toBe(0);
+    });
+
+    // Le piège de #16 : légal, accepté, et le changelog n'y attache aucune tâche.
+    // Le code de sortie doit rester 0 — un hook `commit-msg` qui refuserait un
+    // commit valide au prochain upgrade casserait tous les dépôts installés.
+    it('avertit sur une tâche en fin de sujet sans changer le code de sortie', async () => {
+      const { exitCode, stderr, stdout } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'fix: corrige la redirection (#54)\n');
+        return runCLI(['--json', 'validate', file]);
+      });
+
+      expect(exitCode).toBe(0);
+
+      const payload = JSON.parse(stdout) as { valid: boolean; warnings: { code: string }[] };
+      expect(payload.valid).toBe(true);
+      expect(payload.warnings.map((warning) => warning.code)).toEqual(['subject-trailing-task']);
+
+      // stdout reste la charge utile : le texte lisible va sur stderr.
+      expect(stderr).toContain('#54');
+    });
+
+    it('n’avertit pas quand le scope porte la tâche', async () => {
+      const { stdout } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(directory, 'COMMIT_EDITMSG', 'fix(#54): corrige la redirection\n');
+        return runCLI(['--json', 'validate', file]);
+      });
+
+      expect((JSON.parse(stdout) as { warnings: unknown[] }).warnings).toEqual([]);
     });
 
     // L'assertion inverse promise par #11 : avant #1, la ligne de corps
