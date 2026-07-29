@@ -77,8 +77,26 @@ echo '{"type":"feat","subject":"add the types command","changelog":"Adds the typ
   | komity --json commit --input -
 ```
 
-`--input` takes either a JSON string or `-` to read stdin. Without `--commit`, nothing
-is written to the repository — the message is only assembled and returned.
+`--input` resolves in three modes, in this order:
+
+| given                     | read as                     |
+| ------------------------- | --------------------------- |
+| `-`                       | stdin                       |
+| a string starting `{`/`[` | the JSON payload itself     |
+| anything else             | a path to a file holding it |
+
+**Prefer the file path.** A multi-line body with quotes or `@` sigils cannot be passed as
+a shell argument on Windows — cmd.exe re-parses before node sees it — and `-` needs a pipe
+a non-interactive wrapper cannot build:
+
+```bash
+komity --json commit --input ./commit.json
+```
+
+A path that does not resolve fails as `invalid-payload` naming the path it tried.
+
+Without `--commit`, nothing is written to the repository — the message is only assembled
+and returned.
 
 ```json
 {
@@ -157,17 +175,17 @@ Any command under `--json` that fails writes one object and exits non-zero:
 { "schema": 1, "error": { "code": "type-unknown", "message": "Unknown commit type <nope>.", "allowedTypes": ["..."] } }
 ```
 
-| code                 | when                                                               |
-| -------------------- | ------------------------------------------------------------------ |
-| `input-required`     | `--json commit` without `--input`; or `--input -` with stdin a TTY |
-| `not-interactive`    | `commit` without `--input` and stdin is not a TTY                  |
-| `nothing-staged`     | `--commit` with nothing in the index                               |
-| `invalid-payload`    | `--input` is not a JSON object, or a field has the wrong type      |
-| `type-unknown`       | unknown commit type; carries `allowedTypes`                        |
-| `subject-missing`    | `subject` absent or blank                                          |
-| `subject-too-long`   | subject over 100 characters; carries `length`                      |
-| `git-command-failed` | a git invocation failed; carries `command` and `stderr`            |
-| `unknown-error`      | anything else                                                      |
+| code                 | when                                                                             |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `input-required`     | `--json commit` without `--input`; or `--input -` with stdin a TTY               |
+| `not-interactive`    | `commit` without `--input` and stdin is not a TTY                                |
+| `nothing-staged`     | `--commit` with nothing in the index                                             |
+| `invalid-payload`    | `--input` is not a JSON object or a readable file, or a field has the wrong type |
+| `type-unknown`       | unknown commit type; carries `allowedTypes`                                      |
+| `subject-missing`    | `subject` absent or blank                                                        |
+| `subject-too-long`   | subject over 100 characters; carries `length`                                    |
+| `git-command-failed` | a git invocation failed; carries `command` and `stderr`                          |
+| `unknown-error`      | anything else                                                                    |
 
 `komity commit` never prompts when stdin is not a TTY — it fails with
 `not-interactive` instead of hanging on inquirer until your job times out.

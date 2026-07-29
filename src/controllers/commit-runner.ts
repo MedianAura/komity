@@ -1,9 +1,9 @@
 import inquirer, { type Answers } from 'inquirer';
 import { InjectDependency } from '@medianaura/di-manager';
+import { resolveCommitInput } from '../helpers/commit-input.js';
 import { assembleCommitMessage, type CommitPayload, parseCommitPayload } from '../helpers/commit-payload.js';
 import { KomityError } from '../helpers/errors.js';
 import { Logger } from '../helpers/logger.js';
-import { readStdin } from '../helpers/read-stdin.js';
 import { SCHEMA_VERSION } from '../helpers/schema.js';
 import { DescriptionQuestion, LogQuestion, SubjectQuestion, TaskQuestion, TypeQuestion } from '../models/questions/index.js';
 import { CacheService, CacheServiceToken } from '../services/cache.js';
@@ -57,8 +57,7 @@ export class CommitRunner {
   }
 
   private async runFromPayload(input: string, options: CommitOptions): Promise<void> {
-    const raw = input === '-' ? await readStdin() : input;
-    const commitMessage = assembleCommitMessage(parseCommitPayload(raw));
+    const commitMessage = assembleCommitMessage(parseCommitPayload(await resolveCommitInput(input)));
 
     // Sans `--commit`, komity n'écrit rien dans le dépôt : l'assemblage seul.
     if (options.commit) {

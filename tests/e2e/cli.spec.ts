@@ -108,6 +108,37 @@ describe.concurrent('komity', () => {
       expect(stdout).toContain('feature: ajoute une chose');
     });
 
+    // La forme que #15 débloque : sous PowerShell, ni le JSON en argument ni le
+    // pipe ne sont atteignables depuis un wrapper non interactif.
+    it('lit la charge utile depuis un chemin de fichier', async () => {
+      const { exitCode, stdout } = await withTemporaryDirectory(async (directory) => {
+        const file = await writeCommitFile(
+          directory,
+          'commit.json',
+          JSON.stringify({ type: 'feat', scope: '#15', subject: 'accepte un chemin', body: "des guillemets 'ici' et un @sigil", changelog: 'Accepte un chemin de fichier' }),
+        );
+
+        return runCLI(['--json', 'commit', '--input', file]);
+      });
+
+      expect(exitCode).toBe(0);
+
+      const { message } = JSON.parse(stdout) as { message: string };
+      expect(message).toContain('feature(#15): accepte un chemin');
+      expect(message).toContain("des guillemets 'ici' et un @sigil");
+      expect(message).toContain('[log] Accepte un chemin de fichier');
+    });
+
+    it('nomme le chemin tenté quand le fichier est absent', async () => {
+      const { exitCode, stdout } = await runCLI(['--json', 'commit', '--input', './nulle-part.json']);
+
+      expect(exitCode).not.toBe(0);
+
+      const { error } = JSON.parse(stdout) as { error: { code: string; message: string } };
+      expect(error.code).toBe('invalid-payload');
+      expect(error.message).toContain('nulle-part.json');
+    });
+
     // Aller-retour : ce que komity assemble doit passer komity validate.
     it('produit un message que validate accepte', async () => {
       const payload = JSON.stringify({ type: 'fix', scope: 'ab-12', subject: 'corrige', body: 'détail', log: true });
