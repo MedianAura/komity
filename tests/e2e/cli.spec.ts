@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runCLI, withTemporaryDirectory, writeCommitFile } from './helpers/cli.js';
+import { createStagedRepo, runCLI, withTemporaryDirectory, writeCommitFile } from './helpers/cli.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const packageJSON = JSON.parse(readFileSync(path.join(root, 'package.json'), { encoding: 'utf8' })) as {
@@ -137,6 +137,24 @@ describe.concurrent('komity', () => {
       const { error } = JSON.parse(stdout) as { error: { code: string; message: string } };
       expect(error.code).toBe('invalid-payload');
       expect(error.message).toContain('nulle-part.json');
+    });
+
+    // Le chemin d'écriture n'était testé qu'en échec : `git commit` héritait de
+    // stdout et poussait son résumé devant la charge utile, ce que personne ne
+    // voyait faute d'un cas qui réussit.
+    it('écrit un stdout analysable quand le commit réussit', async () => {
+      const { exitCode, stdout } = await withTemporaryDirectory(async (directory) => {
+        await createStagedRepo(directory);
+        const file = await writeCommitFile(directory, 'commit.json', JSON.stringify({ type: 'fix', subject: 'corrige la redirection' }));
+
+        return runCLI(['--json', 'commit', '--commit', '--input', file], { cwd: directory });
+      });
+
+      expect(exitCode).toBe(0);
+
+      const payload = JSON.parse(stdout) as { committed: boolean; ok: boolean };
+      expect(payload.ok).toBe(true);
+      expect(payload.committed).toBe(true);
     });
 
     // Aller-retour : ce que komity assemble doit passer komity validate.

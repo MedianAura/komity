@@ -51,12 +51,23 @@ export class GitService {
     }
   }
 
-  public async commit(commitMessage: string): Promise<boolean | string> {
+  /**
+   * `json` détourne le résumé de git vers stderr. Hérité, il s'imprime sur le
+   * stdout de komity devant la charge utile et casse le `JSON.parse` de
+   * l'appelant — la même faute que les `Logger.success` réglés en #2, mais
+   * commise par un sous-processus plutôt que par le logger. En mode texte
+   * l'héritage reste : un utilisateur interactif doit voir git parler.
+   */
+  public async commit(commitMessage: string, options: { json?: boolean } = {}): Promise<boolean | string> {
     const command = 'git';
     const parameters = ['commit', '-m', dedent(commitMessage)];
 
     return new Promise((resolve, reject) => {
-      const child = spawn(command, parameters, { stdio: 'inherit' });
+      // `pipe` plutôt que de passer `process.stderr` en descripteur : sous test
+      // le stderr de komity est lui-même un tuyau, donc sans fd sous-jacent.
+      const child = spawn(command, parameters, { stdio: ['inherit', options.json ? 'pipe' : 'inherit', 'inherit'] });
+
+      child.stdout?.pipe(process.stderr);
 
       child.on('error', (error) => {
         reject(error.message);

@@ -51,6 +51,23 @@ export async function withTemporaryDirectory<T>(callback: (directory: string) =>
   }
 }
 
+/**
+ * Dépôt jetable avec un fichier déjà indexé, pour les cas qui écrivent vraiment.
+ * L'identité est posée localement : sur une machine sans `user.email` global,
+ * git sort en 128 et le cas échouerait pour une raison étrangère au test.
+ */
+export async function createStagedRepo(directory: string): Promise<void> {
+  const git = async (...arguments_: string[]): Promise<void> => {
+    await execa('git', arguments_, { cwd: directory });
+  };
+
+  await git('init', '--initial-branch=main');
+  await git('config', 'user.email', 'komity@example.test');
+  await git('config', 'user.name', 'Komity Test');
+  await writeFile(path.join(directory, 'fichier.txt'), 'contenu\n', { encoding: 'utf8' });
+  await git('add', '.');
+}
+
 /** Écrit un fichier de message de commit et renvoie son chemin absolu. */
 export async function writeCommitFile(directory: string, name: string, content: string): Promise<string> {
   const file = path.join(directory, name);

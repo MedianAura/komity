@@ -62,7 +62,7 @@ export class CommitRunner {
     // Sans `--commit`, komity n'écrit rien dans le dépôt : l'assemblage seul.
     if (options.commit) {
       await this.assertStagingIsDirty();
-      await this.git.commit(commitMessage);
+      await this.git.commit(commitMessage, { json: options.json });
       this.cache.clearCache();
     }
 
