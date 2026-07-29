@@ -68,6 +68,14 @@ program
   });
 
 program
+  .command('schema')
+  .description('Print the JSON Schema of the commit payload')
+  .action(async () => {
+    const { SchemaRunner } = await import('./controllers/schema-runner.js');
+    await new SchemaRunner().run({ json: cli.opts().json });
+  });
+
+program
   .command('setup')
   .argument('<title>', 'Specify the title for the changelog')
   .action(async (title) => {

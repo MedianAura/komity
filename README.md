@@ -137,14 +137,15 @@ Other for anything unrecognised.
 
 ## Commands
 
-| command                     | effect                                   |
-| --------------------------- | ---------------------------------------- |
-| `komity` / `komity commit`  | prompt for and create a commit           |
-| `komity validate <file>`    | validate a commit message file           |
-| `komity types`              | list accepted types                      |
-| `komity generate <version>` | render the changelog into `CHANGELOG.md` |
-| `komity setup <title>`      | create `CHANGELOG.md`                    |
-| `komity branch <name>`      | fetch, pull, then create the branch      |
+| command                     | effect                                      |
+| --------------------------- | ------------------------------------------- |
+| `komity` / `komity commit`  | prompt for and create a commit              |
+| `komity validate <file>`    | validate a commit message file              |
+| `komity types`              | list accepted types                         |
+| `komity generate <version>` | render the changelog into `CHANGELOG.md`    |
+| `komity setup <title>`      | create `CHANGELOG.md`                       |
+| `komity schema`             | print the JSON Schema of the commit payload |
+| `komity branch <name>`      | fetch, pull, then create the branch         |
 
 Global options:
 

@@ -18,6 +18,9 @@ Every payload carries `"schema": 1`. Increment means the shape changed.
 ## The loop
 
 ```
+komity --json schema             read the payload contract
+        |
+        v
 komity --json types              discover the taxonomy
         |
         v
@@ -30,11 +33,30 @@ komity --json commit --input -   assemble (and optionally write) the message
 komity --json validate <file>    check it
         |
         v
-read errors[].rule               fix precisely what failed, retry
+read errors[] and warnings[]     fix precisely what failed, retry
 ```
 
 You do not have to hardcode the type list. `types` publishes it, and every
 validation failure repeats it in `allowedTypes`.
+
+## The payload contract
+
+```bash
+komity --json schema
+```
+
+```json
+{ "schema": 1, "payload": { "$schema": "…", "required": ["type", "subject"], "properties": { "…": {} } } }
+```
+
+`payload` is the JSON Schema of what `commit --input` accepts. The type `enum` and the
+subject `maxLength` are derived from the same source the tool validates against, so this is
+accurate for the _installed_ version — which a copy of this file cannot promise.
+
+Unknown properties are ignored rather than rejected, and the schema says so instead of
+claiming a refusal that never happens.
+
+Without `--json`, the same document is printed indented.
 
 ## Discovering the taxonomy
 
@@ -179,7 +201,9 @@ Exit code is 0 when valid, non-zero otherwise. The payload is written either way
 }
 ```
 
-`errors[].rule` tells you _what_ to fix, which is not the same repair in each case:
+`errors[].rule` tells you _what_ to fix, which is not the same repair in each case. Entries
+also carry `field` when the fault belongs to one part of the header rather than the whole
+line — `header-missing` and `format-invalid` have none, on purpose:
 
 | rule               | meaning                                            | what to change                    |
 | ------------------ | -------------------------------------------------- | --------------------------------- |
@@ -207,7 +231,7 @@ Any command under `--json` that fails writes one object and exits non-zero:
 | `invalid-payload`    | `--input` is not a JSON object or a readable file, or a field has the wrong type |
 | `type-unknown`       | unknown commit type; carries `allowedTypes`                                      |
 | `subject-missing`    | `subject` absent or blank                                                        |
-| `subject-too-long`   | subject over 100 characters; carries `length`                                    |
+| `subject-too-long`   | subject over 100 characters; carries `field`, `max` and `length`                 |
 | `git-command-failed` | a git invocation failed; carries `command` and `stderr`                          |
 | `unknown-error`      | anything else                                                                    |
 

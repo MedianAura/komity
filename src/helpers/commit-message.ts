@@ -65,7 +65,17 @@ export function isValidCommitMessage(message: string): boolean {
   return validateCommitMessage(message).valid;
 }
 
+/**
+ * `field` s'ajoute à `rule` et `message`, publiés sous `schema: 1`. L'issue
+ * proposait de remplacer `rule` par `code` : ça aurait cassé le contrat qu'elle
+ * cherche à rendre découvrable, donc `schema: 2` pour un gain cosmétique.
+ *
+ * `header-missing` et `format-invalid` n'ont pas de champ : la faute porte sur
+ * la ligne entière, pas sur une de ses parties. Mieux vaut l'absence qu'un
+ * `field: "header"` inventé pour la symétrie.
+ */
 interface ValidationError {
+  field?: string;
   message: string;
   rule: string;
 }
@@ -107,6 +117,7 @@ export function validateCommitMessage(message: string): ValidationResult {
         errors: [
           {
             rule: 'subject-too-long',
+            field: 'subject',
             message: `Subject must be ${SUBJECT_MAX_LENGTH.toString(10)} characters or fewer; it is ${subject.length.toString(10)}.`,
           },
         ],
@@ -125,7 +136,7 @@ export function validateCommitMessage(message: string): ValidationResult {
   // sur le jeton. Les deux corrections ne sont pas les mêmes.
   const isUnknownType = declaredType !== undefined && resolveType(declaredType) === undefined;
   const errors: ValidationError[] = isUnknownType
-    ? [{ rule: 'type-unknown', message: `Unknown commit type <${declaredType ?? ''}>.` }]
+    ? [{ rule: 'type-unknown', field: 'type', message: `Unknown commit type <${declaredType ?? ''}>.` }]
     : [{ rule: 'format-invalid', message: `Header must read <type(scope): subject>, for example <${EXAMPLE_HEADER}>.` }];
 
   return { ...result, valid: false, errors };

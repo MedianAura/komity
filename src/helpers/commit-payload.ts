@@ -58,41 +58,47 @@ export function parseCommitPayload(raw: string): CommitPayload {
 
   const payload = parsed as Record<string, unknown>;
 
+  // `field` s'ajoute aux détails, il ne remplace rien : `code`, `message` et
+  // `length` sont publiés sous `schema: 1`. Les renommer casserait le contrat
+  // que #16 cherche justement à rendre découvrable. `got` n'est pas ajouté à
+  // côté de `length` — ce serait la même valeur sous deux noms.
   const type = typeof payload.type === 'string' ? resolveType(payload.type) : undefined;
   if (type === undefined) {
-    fail('type-unknown', `Unknown commit type <${String(payload.type)}>.`, { allowedTypes });
+    fail('type-unknown', `Unknown commit type <${String(payload.type)}>.`, { field: 'type', allowedTypes });
   }
 
   if (typeof payload.subject !== 'string' || payload.subject.trim() === '') {
-    fail('subject-missing', 'A non-empty <subject> is required.');
+    fail('subject-missing', 'A non-empty <subject> is required.', { field: 'subject' });
   }
 
   if (payload.subject.length > SUBJECT_MAX_LENGTH) {
     fail('subject-too-long', `Subject must be ${SUBJECT_MAX_LENGTH.toString(10)} characters or fewer.`, {
+      field: 'subject',
+      max: SUBJECT_MAX_LENGTH,
       length: payload.subject.length,
     });
   }
 
   if (payload.scope !== undefined && typeof payload.scope !== 'string') {
-    fail('invalid-payload', '<scope> must be a string.');
+    fail('invalid-payload', '<scope> must be a string.', { field: 'scope' });
   }
 
   if (payload.body !== undefined && typeof payload.body !== 'string') {
-    fail('invalid-payload', '<body> must be a string.');
+    fail('invalid-payload', '<body> must be a string.', { field: 'body' });
   }
 
   if (payload.log !== undefined && typeof payload.log !== 'boolean') {
-    fail('invalid-payload', '<log> must be a boolean.');
+    fail('invalid-payload', '<log> must be a boolean.', { field: 'log' });
   }
 
   if (payload.changelog !== undefined && typeof payload.changelog !== 'string') {
-    fail('invalid-payload', '<changelog> must be a string.');
+    fail('invalid-payload', '<changelog> must be a string.', { field: 'changelog' });
   }
 
   // Le marqueur tient sur une ligne : un saut ferait retomber la suite dans le
   // corps, où elle serait interprétée comme du texte de commit ordinaire.
   if (typeof payload.changelog === 'string' && payload.changelog.includes('\n')) {
-    fail('invalid-payload', '<changelog> must be a single line.');
+    fail('invalid-payload', '<changelog> must be a single line.', { field: 'changelog' });
   }
 
   return {

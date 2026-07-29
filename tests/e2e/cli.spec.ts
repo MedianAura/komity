@@ -74,6 +74,43 @@ describe.concurrent('komity', () => {
     });
   });
 
+  describe('schema', () => {
+    // Dérivé, jamais transcrit : la commande existe pour être exacte sur la
+    // version installée, ce qu'AGENTS.md sur GitHub ne peut pas promettre.
+    it('publie le contrat de la charge utile sous --json', async () => {
+      const { exitCode, stdout } = await runCLI(['--json', 'schema']);
+
+      expect(exitCode).toBe(0);
+
+      const { payload, schema } = JSON.parse(stdout) as { payload: { properties: Record<string, unknown>; required: string[] }; schema: number };
+      expect(schema).toBe(1);
+      expect(payload.required).toEqual(['type', 'subject']);
+      expect(Object.keys(payload.properties)).toEqual(expect.arrayContaining(['body', 'changelog', 'log', 'scope', 'subject', 'type']));
+      expect(Object.keys(payload.properties)).toHaveLength(6);
+    });
+
+    // La liste vient de la même source que `types` : deux contrats qui
+    // divergent valent moins que pas de contrat du tout.
+    it('annonce les mêmes types que la commande types', async () => {
+      const [schemaResult, typesResult] = await Promise.all([runCLI(['--json', 'schema']), runCLI(['--json', 'types'])]);
+
+      const enumerated = (JSON.parse(schemaResult.stdout) as { payload: { properties: { type: { enum: string[] } } } }).payload.properties.type.enum;
+      const published = (JSON.parse(typesResult.stdout) as { types: { aliases: string[]; value: string }[] }).types;
+
+      for (const type of published) {
+        expect(enumerated).toContain(type.value);
+        for (const alias of type.aliases) expect(enumerated).toContain(alias);
+      }
+    });
+
+    it('imprime le schéma lisible sans --json', async () => {
+      const { exitCode, stdout } = await runCLI(['schema']);
+
+      expect(exitCode).toBe(0);
+      expect((JSON.parse(stdout) as { title: string }).title).toContain('komity');
+    });
+  });
+
   // Régression : `setup` écrit le marqueur en apostrophes et `generate` n'en
   // reconnaissait que la forme en guillemets doubles. Les deux commandes ne
   // composaient donc pas, et rien ne l'attrapait.
@@ -193,9 +230,25 @@ describe.concurrent('komity', () => {
 
       expect(exitCode).not.toBe(0);
 
-      const { error } = JSON.parse(stdout) as { error: { allowedTypes: string[]; code: string } };
+      const { error } = JSON.parse(stdout) as { error: { allowedTypes: string[]; code: string; field: string } };
       expect(error.code).toBe('type-unknown');
       expect(error.allowedTypes).toContain('fix');
+      expect(error.field).toBe('type');
+    });
+
+    // Additif : `code`, `message` et `length` sont publiés sous `schema: 1` et
+    // restent. Les remplacer par `field`/`got` aurait cassé le contrat que #16
+    // rend justement découvrable.
+    it('nomme le champ fautif sans retirer les clés existantes', async () => {
+      const payload = JSON.stringify({ type: 'fix', subject: 'x'.repeat(118) });
+      const { stdout } = await runCLI(['--json', 'commit', '--input', payload]);
+
+      const { error } = JSON.parse(stdout) as { error: { code: string; field: string; length: number; max: number; message: string } };
+      expect(error.code).toBe('subject-too-long');
+      expect(error.field).toBe('subject');
+      expect(error.max).toBe(100);
+      expect(error.length).toBe(118);
+      expect(error.message).toContain('100');
     });
 
     // Le garde-fou : sans lui, inquirer bloquerait jusqu'au timeout du job.
